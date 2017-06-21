@@ -1,7 +1,10 @@
 from __future__ import print_function, division
 __version__ = '0.0.1'
 import os.path
-from types import InstanceType
+import sys
+if sys.version_info.major <= 2:  # InstanceType doesn't exist for Python3
+    from types import InstanceType
+
 #import urlparse
 #import urllib
 from threading import Thread, RLock
@@ -20,7 +23,7 @@ from zeep.wsse.username import UsernameToken
 #binding.envns = ('SOAP-ENV', 'http://www.w3.org/2003/05/soap-envelope')
 
 from onvif.exceptions import ONVIFError
-from definition import SERVICES
+from onvif.definition import SERVICES
 #from suds.sax.date import UTC
 import datetime as dt
 # Ensure methods to raise an ONVIFError Exception
@@ -191,7 +194,7 @@ class ONVIFService(object):
                 # No params
                 if params is None:
                     params = {}
-                elif isinstance(params, InstanceType):
+                elif sys.version_info.major <= 2 and isinstance(params, InstanceType):
                     params = ONVIFService.to_dict(params)
                 ret = func(**params)
                 if callable(callback):
