@@ -1,26 +1,27 @@
+from __future__ import print_function, division
 __version__ = '0.0.1'
-
 import os.path
 from types import InstanceType
-import urlparse
-import urllib
+#import urlparse
+#import urllib
 from threading import Thread, RLock
 
 import logging
 logger = logging.getLogger('onvif')
 logging.basicConfig(level=logging.INFO)
-logging.getLogger('suds.client').setLevel(logging.CRITICAL)
+logging.getLogger('zeep.client').setLevel(logging.CRITICAL)
 
-from suds.client import Client
-from suds.wsse import Security, UsernameToken
-from suds.cache import ObjectCache, NoCache
-from suds_passworddigest.token import UsernameDigestToken
-from suds.bindings import binding
-binding.envns = ('SOAP-ENV', 'http://www.w3.org/2003/05/soap-envelope')
+from zeep.client import Client
+from zeep.wsse.username import UsernameToken
+#from suds.wsse import Security#, UsernameToken
+#from suds.cache import ObjectCache, NoCache
+#from suds_passworddigest.token import UsernameDigestToken
+#from suds.bindings import binding
+#binding.envns = ('SOAP-ENV', 'http://www.w3.org/2003/05/soap-envelope')
 
 from onvif.exceptions import ONVIFError
-from definition import SERVICES, NSMAP
-from suds.sax.date import UTC
+from definition import SERVICES
+#from suds.sax.date import UTC
 import datetime as dt
 # Ensure methods to raise an ONVIFError Exception
 # when some thing was wrong
@@ -29,28 +30,29 @@ def safe_func(func):
         try:
             return func(*args, **kwargs)
         except Exception as err:
+            print('Ouuups: err = ', err)
             raise ONVIFError(err)
     return wrapped
 
 
-class UsernameDigestTokenDtDiff(UsernameDigestToken):
-    '''
-    UsernameDigestToken class, with a time offset parameter that can be adjusted;
-    This allows authentication on cameras without being time synchronized.
-    Please note that using NTP on both end is the recommended solution, 
-    this should only be used in "safe" environements.
-    '''
-    def __init__(self, user, passw, dt_diff=None) :
-#        Old Style class ... sigh ...
-        UsernameDigestToken.__init__(self, user, passw)
-        self.dt_diff = dt_diff
-        
-    def setcreated(self, *args, **kwargs):
-        dt_adjusted = None
-        if self.dt_diff :
-            dt_adjusted = (self.dt_diff + dt.datetime.utcnow())
-        UsernameToken.setcreated(self, dt=dt_adjusted, *args, **kwargs)
-        self.created = str(UTC(self.created))
+#class UsernameDigestTokenDtDiff(UsernameDigestToken):
+#    '''
+#    UsernameDigestToken class, with a time offset parameter that can be adjusted;
+#    This allows authentication on cameras without being time synchronized.
+#    Please note that using NTP on both end is the recommended solution,
+#    this should only be used in "safe" environements.
+#    '''
+#    def __init__(self, user, passw, dt_diff=None) :
+##        Old Style class ... sigh ...
+#        UsernameDigestToken.__init__(self, user, passw)
+#        self.dt_diff = dt_diff
+
+#    def setcreated(self, *args, **kwargs):
+#        dt_adjusted = None
+#        if self.dt_diff :
+#            dt_adjusted = (self.dt_diff + dt.datetime.utcnow())
+#        UsernameToken.setcreated(self, dt=dt_adjusted, *args, **kwargs)
+#        self.created = str(UTC(self.created))
 
 
 class ONVIFService(object):
@@ -87,36 +89,41 @@ class ONVIFService(object):
     @safe_func
     def __init__(self, xaddr, user, passwd, url,
                  cache_location='/tmp/suds', cache_duration=None,
-                 encrypt=True, daemon=False, ws_client=None, no_cache=False, portType=None, dt_diff = None):
+                 encrypt=True, daemon=False, ws_client=None, no_cache=False,
+                 portType=None, dt_diff=None, binding_name=''):
+        print('ONVIFService() ENTER', locals())
+        os.environ.pop('http_proxy', None)
+        os.environ.pop('https_proxy', None)
 
         if not os.path.isfile(url):
             raise ONVIFError('%s doesn`t exist!' % url)
 
-        if no_cache:
-            cache = NoCache()
-        else:
-            # Create cache object
-            # NOTE: if cache_location is specified,
-            # onvif must has the permission to access it.
-            cache = ObjectCache(location=cache_location)
-            # cache_duration: cache will expire in `cache_duration` days
-            if cache_duration is not None:
-                cache.setduration(days=cache_duration)
+#        if no_cache:
+#            cache = NoCache()
+#        else:
+#            # Create cache object
+#            # NOTE: if cache_location is specified,
+#            # onvif must has the permission to access it.
+#            cache = ObjectCache(location=cache_location)
+#            # cache_duration: cache will expire in `cache_duration` days
+#            if cache_duration is not None:
+#                cache.setduration(days=cache_duration)
 
 
         # Convert pathname to url
-        self.url = urlparse.urljoin('file:', urllib.pathname2url(url))
+        self.url = url  #urlparse.urljoin('file:', urllib.pathname2url(url))
         self.xaddr = xaddr
         # Create soap client
         if not ws_client:
-            self.ws_client = Client(url=self.url,
-                                    location=self.xaddr,
-                                    cache=cache,
-                                    port=portType,
-                                    headers={'Content-Type': 'application/soap+xml'})
+            print(self.url, self.xaddr)
+            self.zeep_client = Client(wsdl=url, wsse=UsernameToken(user, passwd, use_digest=True))
+#                                    cache=cache,
+#                                    port=portType,
+#                                    headers={'Content-Type': 'application/soap+xml'})
+            self.ws_client = self.zeep_client.create_service(binding_name, self.xaddr)
+            #print(self.ws_client.GetSystemDateAndTime())
         else:
-            self.ws_client = ws_client
-            self.ws_client.set_options(location=self.xaddr)
+            self.ws_client = ws_client.create_service(binding_name, self.xaddr)
 
         # Set soap header for authentication
         self.user = user
@@ -127,30 +134,35 @@ class ONVIFService(object):
         self.daemon = daemon
 
         self.dt_diff = dt_diff
-        self.set_wsse()
+#        self.set_wsse()
 
         # Method to create type instance of service method defined in WSDL
-        self.create_type = self.ws_client.factory.create
+#        print(">>>>>", self.zeep_client.__dict__)
+#        print(">>>>>", self.ws_client.__dict__)
+        #print(">>>>>", self.zeep_client.type_factory('ns1').__dict__)
+        #self.create_type = self.ws_client.factory.create
+        self.create_type = lambda x: self.zeep_client.get_element('ns0:' + x)
+        print('ONVIFService() EXIT')
 
-    @safe_func
-    def set_wsse(self, user=None, passwd=None):
-        ''' Basic ws-security auth '''
-        if user:
-            self.user = user
-        if passwd:
-            self.passwd = passwd
+#    @safe_func
+#    def set_wsse(self, user=None, passwd=None):
+#        ''' Basic ws-security auth '''
+#        if user:
+#            self.user = user
+#        if passwd:
+#            self.passwd = passwd
 
-        security = Security()
+#        security = Security()
 
-        if self.encrypt:
-            token = UsernameDigestTokenDtDiff(self.user, self.passwd, dt_diff=self.dt_diff)
-        else:
-            token = UsernameToken(self.user, self.passwd)
-            token.setnonce()
-            token.setcreated()
-
-        security.tokens.append(token)
-        self.ws_client.set_options(wsse=security)
+#        if self.encrypt:
+#            token = UsernameDigestTokenDtDiff(self.user, self.passwd, dt_diff=self.dt_diff)
+#        else:
+#            token = UsernameToken(self.user, self.passwd)
+#            token.setnonce()
+#            token.setcreated()
+#
+#        security.tokens.append(token)
+#        self.ws_client.set_options(wsse=security)
 
     @classmethod
     @safe_func
@@ -206,17 +218,17 @@ class ONVIFService(object):
         if builtin:
             return self.__dict__[name]
         else:
-            return self.service_wrapper(getattr(self.ws_client.service, name))
+            return self.service_wrapper(getattr(self.ws_client, name))
 
 class ONVIFCamera(object):
     '''
     Python Implemention ONVIF compliant device
     This class integrates onvif services
-				
+
     adjust_time parameter allows authentication on cameras without being time synchronized.
-    Please note that using NTP on both end is the recommended solution, 
+    Please note that using NTP on both end is the recommended solution,
     this should only be used in "safe" environements.
-    Also, this cannot be used on AXIS camera, as every request is authenticated, contrary to ONVIF standard		
+    Also, this cannot be used on AXIS camera, as every request is authenticated, contrary to ONVIF standard
 
     >>> from onvif import ONVIFCamera
     >>> mycam = ONVIFCamera('192.168.0.112', 80, 'admin', '12345')
@@ -237,6 +249,7 @@ class ONVIFCamera(object):
     def __init__(self, host, port ,user, passwd, wsdl_dir=os.path.join(os.path.dirname(os.path.dirname(__file__)), "wsdl"),
                  cache_location=None, cache_duration=None,
                  encrypt=True, daemon=False, no_cache=False, adjust_time=False):
+        print('ONVIFCamera() ENTER', locals())
         self.host = host
         self.port = int(port)
         self.user = user
@@ -257,6 +270,7 @@ class ONVIFCamera(object):
         self.update_xaddrs()
 
         self.to_dict = ONVIFService.to_dict
+        print('ONVIFCamera() EXIT')
 
     def update_xaddrs(self):
         # Establish devicemgmt service first
@@ -267,11 +281,12 @@ class ONVIFCamera(object):
             cam_date = dt.datetime(cdate.Date.Year, cdate.Date.Month, cdate.Date.Day, cdate.Time.Hour, cdate.Time.Minute, cdate.Time.Second)
             self.dt_diff = cam_date - dt.datetime.utcnow()
             self.devicemgmt.dt_diff = self.dt_diff
-            self.devicemgmt.set_wsse()
+            #self.devicemgmt.set_wsse()
         # Get XAddr of services on the device
         self.xaddrs = { }
         capabilities = self.devicemgmt.GetCapabilities({'Category': 'All'})
-        for name, capability in capabilities:
+        for name in capabilities:
+            capability = capabilities[name]
             try:
                 if name.lower() in SERVICES:
                     ns = SERVICES[name.lower()]['ns']
@@ -284,7 +299,7 @@ class ONVIFCamera(object):
                 self.event = self.create_events_service()
                 self.xaddrs['http://www.onvif.org/ver10/events/wsdl/PullPointSubscription'] = self.event.CreatePullPointSubscription().SubscriptionReference.Address
             except:
-                pass                
+                pass
 
 
     def update_url(self, host=None, port=None):
@@ -307,21 +322,21 @@ class ONVIFCamera(object):
                 xaddr = getattr(self.capabilities, sname.capitalize).XAddr
                 self.services[sname].ws_client.set_options(location=xaddr)
 
-    def update_auth(self, user=None, passwd=None):
-        changed = False
-        if user and user != self.user:
-            changed = True
-            self.user = user
-        if passwd and passwd != self.passwd:
-            changed = True
-            self.passwd = passwd
+#    def update_auth(self, user=None, passwd=None):
+#        changed = False
+#        if user and user != self.user:
+#            changed = True
+#            self.user = user
+#        if passwd and passwd != self.passwd:
+#            changed = True
+#            self.passwd = passwd
 
-        if not changed:
-            return
+#        if not changed:
+#            return
 
-        with self.services_lock:
-            for service in self.services.keys():
-                self.services[service].set_wsse(user, passwd)
+#        with self.services_lock:
+#            for service in self.services.keys():
+#                self.services[service].set_wsse(user, passwd)
 
     def get_service(self, name, create=True):
         service = None
@@ -337,6 +352,7 @@ class ONVIFCamera(object):
             raise ONVIFError('Unknown service %s' % name)
         wsdl_file = SERVICES[name]['wsdl']
         ns = SERVICES[name]['ns']
+        binding_name = '{%s}%s' % (ns, SERVICES[name]['binding'])
 
         wsdlpath = os.path.join(self.wsdl_dir, wsdl_file)
         if not os.path.isfile(wsdlpath):
@@ -345,20 +361,20 @@ class ONVIFCamera(object):
         # XAddr for devicemgmt is fixed:
         if name == 'devicemgmt':
             xaddr = 'http://%s:%s/onvif/device_service' % (self.host, self.port)
-            return xaddr, wsdlpath
+            return xaddr, wsdlpath, binding_name
 
         # Get other XAddr
         xaddr = self.xaddrs.get(ns)
         if not xaddr:
             raise ONVIFError('Device doesn`t support service: %s' % name)
 
-        return xaddr, wsdlpath
+        return xaddr, wsdlpath, binding_name
 
     def create_onvif_service(self, name, from_template=True, portType=None):
         '''Create ONVIF service client'''
 
         name = name.lower()
-        xaddr, wsdl_file = self.get_definition(name)
+        xaddr, wsdl_file, binding_name = self.get_definition(name)
 
         with self.services_lock:
             svt = self.services_template.get(name)
@@ -370,14 +386,20 @@ class ONVIFCamera(object):
                                              self.cache_duration,
                                              self.encrypt,
                                              self.daemon,
-                                             no_cache=self.no_cache, portType=portType, dt_diff=self.dt_diff)
+                                             no_cache=self.no_cache,
+                                             portType=portType,
+                                             dt_diff=self.dt_diff,
+                                             binding_name=binding_name)
             # No template, create new service from wsdl document.
             # A little time-comsuming
             else:
                 service = ONVIFService(xaddr, self.user, self.passwd,
                                        wsdl_file, self.cache_location,
                                        self.cache_duration, self.encrypt,
-                                       self.daemon, no_cache=self.no_cache, portType=portType, dt_diff=self.dt_diff)
+                                       self.daemon, no_cache=self.no_cache,
+                                       portType=portType,
+                                       dt_diff=self.dt_diff,
+                                       binding_name=binding_name)
 
             self.services[name] = service
 
