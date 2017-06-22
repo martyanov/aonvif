@@ -5,9 +5,7 @@ ONVIF Client Implementation in Python
 
 Dependencies
 ------------
-`suds <https://pypi.python.org/pypi/suds>`_ >= 0.4
-
-`suds-passworddigest <https://pypi.python.org/pypi/suds_passworddigest>`_
+`suds <http://docs.python-zeep.org>`_ >= 2.2.0
 
 Install python-onvif
 --------------------
