@@ -2,11 +2,9 @@ from __future__ import print_function, division
 __version__ = '0.0.1'
 import os.path
 import sys
-if sys.version_info.major <= 2:  # InstanceType doesn't exist for Python3
+if sys.version_info.major <= 2:  # InstanceType doesn't exist in Python3
     from types import InstanceType
 
-#import urlparse
-#import urllib
 from threading import Thread, RLock
 
 import logging
@@ -16,11 +14,7 @@ logging.getLogger('zeep.client').setLevel(logging.CRITICAL)
 
 from zeep.client import Client
 from zeep.wsse.username import UsernameToken
-#from suds.wsse import Security#, UsernameToken
-#from suds.cache import ObjectCache, NoCache
-#from suds_passworddigest.token import UsernameDigestToken
-#from suds.bindings import binding
-#binding.envns = ('SOAP-ENV', 'http://www.w3.org/2003/05/soap-envelope')
+import zeep.helpers
 
 from onvif.exceptions import ONVIFError
 from onvif.definition import SERVICES
@@ -33,7 +27,11 @@ def safe_func(func):
         try:
             return func(*args, **kwargs)
         except Exception as err:
-            print('Ouuups: err = ', err)
+            print('Ouuups: err =', err, ', func =', func, ', args =', args, ', type(args) =',
+                  type(args), ', kwargs =', kwargs, ', type(kwargs) =', type(kwargs))
+            for a in args:
+                if isinstance(a, zeep.xsd.elements.element.Element):
+                    print('<<<<<', type(a.resolve_type()), '>>>>>', type(zeep.helpers.serialize_object(a.resolve_type(), dict)))
             raise ONVIFError(err)
     return wrapped
 
@@ -176,16 +174,9 @@ class ONVIFService(object):
 
     @staticmethod
     @safe_func
-    def to_dict(sudsobject):
+    def to_dict(zeepobject):
         # Convert a WSDL Type instance into a dictionary
-        if sudsobject is None:
-            return { }
-        elif isinstance(sudsobject, list):
-            ret = [ ]
-            for item in sudsobject:
-                ret.append(Client.dict(item))
-            return ret
-        return Client.dict(sudsobject)
+        return {} if zeepobject is None else zeep.helpers.serialize_object(zeepobject)
 
     def service_wrapper(self, func):
         @safe_func
@@ -194,7 +185,7 @@ class ONVIFService(object):
                 # No params
                 if params is None:
                     params = {}
-                elif sys.version_info.major <= 2 and isinstance(params, InstanceType):
+                elif sys.version_info.major > 2 or isinstance(params, InstanceType):
                     params = ONVIFService.to_dict(params)
                 ret = func(**params)
                 if callable(callback):
