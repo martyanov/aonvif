@@ -1,9 +1,9 @@
 from __future__ import print_function, division
 __version__ = '0.0.1'
 import os.path
-import sys
-if sys.version_info.major <= 2:  # InstanceType doesn't exist in Python3
-    from types import InstanceType
+#import sys
+#if sys.version_info.major <= 2:  # InstanceType doesn't exist in Python3
+#    from types import InstanceType
 
 from threading import Thread, RLock
 
@@ -12,7 +12,7 @@ logger = logging.getLogger('onvif')
 logging.basicConfig(level=logging.INFO)
 logging.getLogger('zeep.client').setLevel(logging.CRITICAL)
 
-from zeep.client import Client
+from zeep.client import Client, CachingClient
 from zeep.wsse.username import UsernameToken
 import zeep.helpers
 
@@ -27,11 +27,8 @@ def safe_func(func):
         try:
             return func(*args, **kwargs)
         except Exception as err:
-            print('Ouuups: err =', err, ', func =', func, ', args =', args, ', type(args) =',
-                  type(args), ', kwargs =', kwargs, ', type(kwargs) =', type(kwargs))
-            for a in args:
-                if isinstance(a, zeep.xsd.elements.element.Element):
-                    print('<<<<<', type(a.resolve_type()), '>>>>>', type(zeep.helpers.serialize_object(a.resolve_type(), dict)))
+#            print('Ouuups: err =', err, ', func =', func, ', args =', args, ', type(args) =',
+#                  type(args), ', kwargs =', kwargs, ', type(kwargs) =', type(kwargs))
             raise ONVIFError(err)
     return wrapped
 
@@ -89,42 +86,24 @@ class ONVIFService(object):
 
     @safe_func
     def __init__(self, xaddr, user, passwd, url,
-                 cache_location='/tmp/suds', cache_duration=None,
-                 encrypt=True, daemon=False, ws_client=None, no_cache=False,
+                 encrypt=True, daemon=False, zeep_client=None, no_cache=False,
                  portType=None, dt_diff=None, binding_name=''):
-        print('ONVIFService() ENTER', locals())
-        os.environ.pop('http_proxy', None)
-        os.environ.pop('https_proxy', None)
+        #print('ONVIFService() ENTER', locals())
 
         if not os.path.isfile(url):
             raise ONVIFError('%s doesn`t exist!' % url)
 
-#        if no_cache:
-#            cache = NoCache()
-#        else:
-#            # Create cache object
-#            # NOTE: if cache_location is specified,
-#            # onvif must has the permission to access it.
-#            cache = ObjectCache(location=cache_location)
-#            # cache_duration: cache will expire in `cache_duration` days
-#            if cache_duration is not None:
-#                cache.setduration(days=cache_duration)
-
-
-        # Convert pathname to url
-        self.url = url  #urlparse.urljoin('file:', urllib.pathname2url(url))
+        self.url = url
         self.xaddr = xaddr
+        wsse = UsernameToken(user, passwd, use_digest=encrypt)
         # Create soap client
-        if not ws_client:
-            print(self.url, self.xaddr)
-            self.zeep_client = Client(wsdl=url, wsse=UsernameToken(user, passwd, use_digest=True))
-#                                    cache=cache,
-#                                    port=portType,
-#                                    headers={'Content-Type': 'application/soap+xml'})
-            self.ws_client = self.zeep_client.create_service(binding_name, self.xaddr)
-            #print(self.ws_client.GetSystemDateAndTime())
+        if not zeep_client:
+            #print(self.url, self.xaddr)
+            ClientType = Client if no_cache else CachingClient
+            self.zeep_client = ClientType(wsdl=url, wsse=wsse, strict=False, xml_huge_tree=True)
         else:
-            self.ws_client = ws_client.create_service(binding_name, self.xaddr)
+            self.zeep_client = zeep_client
+        self.ws_client = self.zeep_client.create_service(binding_name, self.xaddr)
 
         # Set soap header for authentication
         self.user = user
@@ -142,8 +121,8 @@ class ONVIFService(object):
 #        print(">>>>>", self.ws_client.__dict__)
         #print(">>>>>", self.zeep_client.type_factory('ns1').__dict__)
         #self.create_type = self.ws_client.factory.create
-        self.create_type = lambda x: self.zeep_client.get_element('ns0:' + x)
-        print('ONVIFService() EXIT')
+        self.create_type = lambda x: self.zeep_client.get_element('ns0:' + x)()
+        #print('ONVIFService() EXIT')
 
 #    @safe_func
 #    def set_wsse(self, user=None, passwd=None):
@@ -185,9 +164,13 @@ class ONVIFService(object):
                 # No params
                 if params is None:
                     params = {}
-                elif sys.version_info.major > 2 or isinstance(params, InstanceType):
+                else:  # elif sys.version_info.major > 2 or isinstance(params, InstanceType):
                     params = ONVIFService.to_dict(params)
-                ret = func(**params)
+                try:
+                    ret = func(**params)
+                except TypeError:
+                    #print('### func =', func, '### params =', params, '### type(params) =', type(params))
+                    ret = func(params)
                 if callable(callback):
                     callback(ret)
                 return ret
@@ -241,16 +224,15 @@ class ONVIFCamera(object):
     use_services_template = {'devicemgmt': True, 'ptz': True, 'media': True,
                          'imaging': True, 'events': True, 'analytics': True }
     def __init__(self, host, port ,user, passwd, wsdl_dir=os.path.join(os.path.dirname(os.path.dirname(__file__)), "wsdl"),
-                 cache_location=None, cache_duration=None,
                  encrypt=True, daemon=False, no_cache=False, adjust_time=False):
-        print('ONVIFCamera() ENTER', locals())
+        #print('ONVIFCamera() ENTER', locals())
+        os.environ.pop('http_proxy', None)
+        os.environ.pop('https_proxy', None)
         self.host = host
         self.port = int(port)
         self.user = user
         self.passwd = passwd
         self.wsdl_dir = wsdl_dir
-        self.cache_location = cache_location
-        self.cache_duration = cache_duration
         self.encrypt = encrypt
         self.daemon = daemon
         self.no_cache = no_cache
@@ -264,7 +246,7 @@ class ONVIFCamera(object):
         self.update_xaddrs()
 
         self.to_dict = ONVIFService.to_dict
-        print('ONVIFCamera() EXIT')
+        #print('ONVIFCamera() EXIT')
 
     def update_xaddrs(self):
         # Establish devicemgmt service first
@@ -376,8 +358,6 @@ class ONVIFCamera(object):
             if svt and from_template and self.use_services_template.get(name):
                 service = ONVIFService.clone(svt, xaddr, self.user,
                                              self.passwd, wsdl_file,
-                                             self.cache_location,
-                                             self.cache_duration,
                                              self.encrypt,
                                              self.daemon,
                                              no_cache=self.no_cache,
@@ -388,8 +368,7 @@ class ONVIFCamera(object):
             # A little time-comsuming
             else:
                 service = ONVIFService(xaddr, self.user, self.passwd,
-                                       wsdl_file, self.cache_location,
-                                       self.cache_duration, self.encrypt,
+                                       wsdl_file, self.encrypt,
                                        self.daemon, no_cache=self.no_cache,
                                        portType=portType,
                                        dt_diff=self.dt_diff,

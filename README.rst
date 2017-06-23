@@ -5,7 +5,7 @@ ONVIF Client Implementation in Python
 
 Dependencies
 ------------
-`suds <http://docs.python-zeep.org>`_ >= 2.2.0
+`zeep <http://docs.python-zeep.org>`_ >= 2.2.0
 
 Install python-onvif
 --------------------
