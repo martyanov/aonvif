@@ -3,7 +3,10 @@
 #from suds import WebFault, MethodNotFound, PortNotFound, \
 #        ServiceNotFound, TypeNotFound, BuildError, \
 #        SoapHeadersNotPermitted
-
+#TODO: Translate these errors into ONVIFError instances, mimicking the original 'suds' behaviour
+#from zeep.exceptions import XMLSyntaxError, XMLParseError, UnexpectedElementError, \
+#         WsdlSyntaxError, TransportError, LookupError, NamespaceError, Fault, ValidationError, \
+#        SignatureVerificationFailed, IncompleteMessage, IncompleteOperation
 # Error codes setting
 # Error unknown, e.g, HTTP errors
 ERR_ONVIF_UNKNOWN = 1

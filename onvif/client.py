@@ -353,26 +353,26 @@ class ONVIFCamera(object):
         xaddr, wsdl_file, binding_name = self.get_definition(name)
 
         with self.services_lock:
-            svt = self.services_template.get(name)
-            # Has a template, clone from it. Faster.
-            if svt and from_template and self.use_services_template.get(name):
-                service = ONVIFService.clone(svt, xaddr, self.user,
-                                             self.passwd, wsdl_file,
-                                             self.encrypt,
-                                             self.daemon,
-                                             no_cache=self.no_cache,
-                                             portType=portType,
-                                             dt_diff=self.dt_diff,
-                                             binding_name=binding_name)
-            # No template, create new service from wsdl document.
-            # A little time-comsuming
-            else:
-                service = ONVIFService(xaddr, self.user, self.passwd,
-                                       wsdl_file, self.encrypt,
-                                       self.daemon, no_cache=self.no_cache,
-                                       portType=portType,
-                                       dt_diff=self.dt_diff,
-                                       binding_name=binding_name)
+#            svt = self.services_template.get(name)
+#            # Has a template, clone from it. Faster.
+#            if svt and from_template and self.use_services_template.get(name):
+#                service = ONVIFService.clone(svt, xaddr, self.user,
+#                                             self.passwd, wsdl_file,
+#                                             self.encrypt,
+#                                             self.daemon,
+#                                             no_cache=self.no_cache,
+#                                             portType=portType,
+#                                             dt_diff=self.dt_diff,
+#                                             binding_name=binding_name)
+#            # No template, create new service from wsdl document.
+#            # A little time-comsuming
+#            else:
+            service = ONVIFService(xaddr, self.user, self.passwd,
+                                   wsdl_file, self.encrypt,
+                                   self.daemon, no_cache=self.no_cache,
+                                   portType=portType,
+                                   dt_diff=self.dt_diff,
+                                   binding_name=binding_name)
 
             self.services[name] = service
 

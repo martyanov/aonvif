@@ -4,13 +4,12 @@ from __future__ import print_function, division
 import re
 from cmd import Cmd
 from ast import literal_eval
-from json import dumps
-from argparse import ArgumentParser, ArgumentError, REMAINDER
+from argparse import ArgumentParser, REMAINDER
 
-from suds import MethodNotFound
-from suds.sax.text import Text
+from zeep.exceptions import LookupError as MethodNotFound
+from zeep.xsd import String as Text
 from onvif import ONVIFCamera, ONVIFService, ONVIFError
-from .definition import SERVICES
+from onvif.definition import SERVICES
 import os.path
 
 SUPPORTED_SERVICES = SERVICES.keys()
