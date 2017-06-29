@@ -21,7 +21,7 @@ ERR_ONVIF_BUILD    = 4
 
 class ONVIFError(Exception):
     def __init__(self, err):
-#        if isinstance(err, (WebFault, SoapHeadersNotPermitted)):
+#        if isinstance(err, (WebFault, SoapHeadersNotPermitted) if with_soap_exc else WebFault):
 #            self.reason = err.fault.Reason.Text
 #            self.fault = err.fault
 #            self.code = ERR_ONVIF_PROTOCOL

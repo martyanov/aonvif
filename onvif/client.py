@@ -1,10 +1,6 @@
 from __future__ import print_function, division
 __version__ = '0.0.1'
 import os.path
-#import sys
-#if sys.version_info.major <= 2:  # InstanceType doesn't exist in Python3
-#    from types import InstanceType
-
 from threading import Thread, RLock
 
 import logging
@@ -162,9 +158,10 @@ class ONVIFService(object):
         def wrapped(params=None, callback=None):
             def call(params=None, callback=None):
                 # No params
+                # print(params.__class__.__mro__)
                 if params is None:
                     params = {}
-                else:  # elif sys.version_info.major > 2 or isinstance(params, InstanceType):
+                else:
                     params = ONVIFService.to_dict(params)
                 try:
                     ret = func(**params)
