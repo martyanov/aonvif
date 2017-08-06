@@ -13,13 +13,7 @@ Install python-onvif
 
 You should clone this repository and run setup.py::
 
-    cd python-onvif && python setup.py install
-
-**From PyPI**
-
-::
-
-    pip install onvif
+    cd python-onvif-zeep && python setup.py install
 
 Getting Started
 ---------------
