@@ -261,7 +261,7 @@ class ONVIFCamera(object):
         for name in capabilities:
             capability = capabilities[name]
             try:
-                if name.lower() in SERVICES:
+                if name.lower() in SERVICES and capability is not None:
                     ns = SERVICES[name.lower()]['ns']
                     self.xaddrs[ns] = capability['XAddr']
             except Exception:

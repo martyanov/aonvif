@@ -1,4 +1,4 @@
-python-onvif
+python-onvif-zeep
 ============
 
 ONVIF Client Implementation in Python
@@ -7,8 +7,8 @@ Dependencies
 ------------
 `zeep <http://docs.python-zeep.org>`_ >= 2.2.0
 
-Install python-onvif
---------------------
+Install python-onvif-zeep
+-------------------------
 **From Source**
 
 You should clone this repository and run setup.py::
