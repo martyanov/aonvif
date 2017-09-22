@@ -17,9 +17,7 @@ You should clone this repository and run setup.py::
 
 Alternatively, you can run::
 
-    pip install --upgrade https://github.com/FalkTannhaeuser/python-onvif-zeep/archive/zeep.zip
-
-(If you are behind a proxy, add the appropriate '--proxy=' option to this *pip* command line.)
+    pip install --upgrade onvif_zeep
 
 
 Getting Started
