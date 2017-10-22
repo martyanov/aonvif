@@ -83,7 +83,7 @@ class ONVIFService(object):
     @safe_func
     def __init__(self, xaddr, user, passwd, url,
                  encrypt=True, daemon=False, zeep_client=None, no_cache=False,
-                 portType=None, dt_diff=None, binding_name=''):
+                 portType=None, dt_diff=None, binding_name='', transport=None):
         #print('ONVIFService() ENTER', locals())
 
         if not os.path.isfile(url):
@@ -96,7 +96,7 @@ class ONVIFService(object):
         if not zeep_client:
             #print(self.url, self.xaddr)
             ClientType = Client if no_cache else CachingClient
-            self.zeep_client = ClientType(wsdl=url, wsse=wsse, strict=False, xml_huge_tree=True)
+            self.zeep_client = ClientType(wsdl=url, wsse=wsse, strict=False, xml_huge_tree=True, transport=transport)
         else:
             self.zeep_client = zeep_client
         self.ws_client = self.zeep_client.create_service(binding_name, self.xaddr)
@@ -221,7 +221,7 @@ class ONVIFCamera(object):
     use_services_template = {'devicemgmt': True, 'ptz': True, 'media': True,
                          'imaging': True, 'events': True, 'analytics': True }
     def __init__(self, host, port ,user, passwd, wsdl_dir=os.path.join(os.path.dirname(os.path.dirname(__file__)), "wsdl"),
-                 encrypt=True, daemon=False, no_cache=False, adjust_time=False):
+                 encrypt=True, daemon=False, no_cache=False, adjust_time=False, transport=None):
         #print('ONVIFCamera() ENTER', locals())
         os.environ.pop('http_proxy', None)
         os.environ.pop('https_proxy', None)
@@ -234,6 +234,7 @@ class ONVIFCamera(object):
         self.daemon = daemon
         self.no_cache = no_cache
         self.adjust_time = adjust_time
+        self.transport = transport
 
         # Active service client container
         self.services = { }
@@ -369,7 +370,8 @@ class ONVIFCamera(object):
                                    self.daemon, no_cache=self.no_cache,
                                    portType=portType,
                                    dt_diff=self.dt_diff,
-                                   binding_name=binding_name)
+                                   binding_name=binding_name,
+                                   transport=self.transport)
 
             self.services[name] = service
 
