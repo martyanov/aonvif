@@ -271,7 +271,7 @@ class ONVIFCamera(object):
         with self.services_lock:
             try:
                 self.event = self.create_events_service()
-                self.xaddrs['http://www.onvif.org/ver10/events/wsdl/PullPointSubscription'] = self.event.CreatePullPointSubscription().SubscriptionReference.Address
+                self.xaddrs['http://www.onvif.org/ver10/events/wsdl/PullPointSubscription'] = self.event.CreatePullPointSubscription().SubscriptionReference.Address._value_1
             except:
                 pass
 
@@ -319,13 +319,17 @@ class ONVIFCamera(object):
             return getattr(self, 'create_%s_service' % name.lower())()
         return service
 
-    def get_definition(self, name):
+    def get_definition(self, name, portType=None):
         '''Returns xaddr and wsdl of specified service'''
         # Check if the service is supported
         if name not in SERVICES:
             raise ONVIFError('Unknown service %s' % name)
         wsdl_file = SERVICES[name]['wsdl']
         ns = SERVICES[name]['ns']
+
+        if portType:
+            ns += '/' + portType
+        
         binding_name = '{%s}%s' % (ns, SERVICES[name]['binding'])
 
         wsdlpath = os.path.join(self.wsdl_dir, wsdl_file)
@@ -348,7 +352,7 @@ class ONVIFCamera(object):
         '''Create ONVIF service client'''
 
         name = name.lower()
-        xaddr, wsdl_file, binding_name = self.get_definition(name)
+        xaddr, wsdl_file, binding_name = self.get_definition(name, portType)
 
         with self.services_lock:
 #            svt = self.services_template.get(name)
