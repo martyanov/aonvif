@@ -338,7 +338,9 @@ class ONVIFCamera(object):
 
         # XAddr for devicemgmt is fixed:
         if name == 'devicemgmt':
-            xaddr = 'http://%s:%s/onvif/device_service' % (self.host, self.port)
+            xaddr = '%s:%s/onvif/device_service' % \
+                    (self.host if (self.host.startswith('http://') or self.host.startswith('https://'))
+                     else 'http://%s' % self.host, self.port)
             return xaddr, wsdlpath, binding_name
 
         # Get other XAddr
