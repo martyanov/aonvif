@@ -327,11 +327,11 @@ class ONVIFCamera(object):
         wsdl_file = SERVICES[name]['wsdl']
         ns = SERVICES[name]['ns']
 
+        binding_name = '{%s}%s' % (ns, SERVICES[name]['binding'])
+
         if portType:
             ns += '/' + portType
         
-        binding_name = '{%s}%s' % (ns, SERVICES[name]['binding'])
-
         wsdlpath = os.path.join(self.wsdl_dir, wsdl_file)
         if not os.path.isfile(wsdlpath):
             raise ONVIFError('No such file: %s' % wsdlpath)
