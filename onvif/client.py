@@ -8,7 +8,7 @@ logger = logging.getLogger('onvif')
 logging.basicConfig(level=logging.INFO)
 logging.getLogger('zeep.client').setLevel(logging.CRITICAL)
 
-from zeep.client import Client, CachingClient
+from zeep.client import Client, CachingClient, Settings
 from zeep.wsse.username import UsernameToken
 import zeep.helpers
 
@@ -96,7 +96,10 @@ class ONVIFService(object):
         if not zeep_client:
             #print(self.url, self.xaddr)
             ClientType = Client if no_cache else CachingClient
-            self.zeep_client = ClientType(wsdl=url, wsse=wsse, strict=False, xml_huge_tree=True, transport=transport)
+            settings = Settings()
+            settings.strict = False
+            settings.xml_huge_tree = True
+            self.zeep_client = ClientType(wsdl=url, wsse=wsse, transport=transport, settings=settings)
         else:
             self.zeep_client = zeep_client
         self.ws_client = self.zeep_client.create_service(binding_name, self.xaddr)
