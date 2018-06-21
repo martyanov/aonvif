@@ -6,7 +6,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 version_path = os.path.join(here, 'onvif/version.txt')
 version = open(version_path).read().strip()
 
-requires = ['zeep >= 2.2.0']
+requires = ['zeep >= 3.0.0']
 
 CLASSIFIERS = [
     'Development Status :: 3 - Alpha',
