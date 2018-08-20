@@ -23,30 +23,33 @@ def safe_func(func):
         try:
             return func(*args, **kwargs)
         except Exception as err:
-#            print('Ouuups: err =', err, ', func =', func, ', args =', args, ', type(args) =',
-#                  type(args), ', kwargs =', kwargs, ', type(kwargs) =', type(kwargs))
+            #print('Ouuups: err =', err, ', func =', func, ', args =', args, ', kwargs =', kwargs)
             raise ONVIFError(err)
     return wrapped
 
 
-#class UsernameDigestTokenDtDiff(UsernameDigestToken):
-#    '''
-#    UsernameDigestToken class, with a time offset parameter that can be adjusted;
-#    This allows authentication on cameras without being time synchronized.
-#    Please note that using NTP on both end is the recommended solution,
-#    this should only be used in "safe" environements.
-#    '''
-#    def __init__(self, user, passw, dt_diff=None) :
-##        Old Style class ... sigh ...
-#        UsernameDigestToken.__init__(self, user, passw)
-#        self.dt_diff = dt_diff
+class UsernameDigestTokenDtDiff(UsernameToken):
+    '''
+    UsernameDigestToken class, with a time offset parameter that can be adjusted;
+    This allows authentication on cameras without being time synchronized.
+    Please note that using NTP on both end is the recommended solution,
+    this should only be used in "safe" environments.
+    '''
+    def __init__(self, user, passw, dt_diff=None, **kwargs):
+        super().__init__(user, passw, **kwargs)
+        self.dt_diff = dt_diff  # Date/time difference in datetime.timedelta
 
-#    def setcreated(self, *args, **kwargs):
-#        dt_adjusted = None
-#        if self.dt_diff :
-#            dt_adjusted = (self.dt_diff + dt.datetime.utcnow())
-#        UsernameToken.setcreated(self, dt=dt_adjusted, *args, **kwargs)
-#        self.created = str(UTC(self.created))
+    def apply(self, envelope, headers):
+        old_created = self.created
+        if self.created is None:
+            self.created = dt.datetime.utcnow()
+        #print('UsernameDigestTokenDtDiff.created: old = %s (type = %s), dt_diff = %s (type = %s)' % (self.created, type(self.created), self.dt_diff, type(self.dt_diff)), end='')
+        if self.dt_diff is not None:
+            self.created += self.dt_diff
+        #print('   new = %s' % self.created)
+        result = super().apply(envelope, headers)
+        self.created = old_created
+        return result
 
 
 class ONVIFService(object):
@@ -91,7 +94,8 @@ class ONVIFService(object):
 
         self.url = url
         self.xaddr = xaddr
-        wsse = UsernameToken(user, passwd, use_digest=encrypt)
+        wsse = UsernameDigestTokenDtDiff(user, passwd, dt_diff=dt_diff, use_digest=encrypt)
+#        wsse = UsernameToken(user, passwd, use_digest=encrypt)
         # Create soap client
         if not zeep_client:
             #print(self.url, self.xaddr)
@@ -183,7 +187,6 @@ class ONVIFService(object):
                 return call(params, callback)
         return wrapped
 
-
     def __getattr__(self, name):
         '''
         Call the real onvif Service operations,
@@ -196,6 +199,7 @@ class ONVIFService(object):
             return self.__dict__[name]
         else:
             return self.service_wrapper(getattr(self.ws_client, name))
+
 
 class ONVIFCamera(object):
     '''
@@ -259,6 +263,7 @@ class ONVIFCamera(object):
             self.dt_diff = cam_date - dt.datetime.utcnow()
             self.devicemgmt.dt_diff = self.dt_diff
             #self.devicemgmt.set_wsse()
+            self.devicemgmt  = self.create_devicemgmt_service()
         # Get XAddr of services on the device
         self.xaddrs = { }
         capabilities = self.devicemgmt.GetCapabilities({'Category': 'All'})
@@ -277,7 +282,6 @@ class ONVIFCamera(object):
                 self.xaddrs['http://www.onvif.org/ver10/events/wsdl/PullPointSubscription'] = self.event.CreatePullPointSubscription().SubscriptionReference.Address._value_1
             except:
                 pass
-
 
     def update_url(self, host=None, port=None):
         changed = False
@@ -334,7 +338,7 @@ class ONVIFCamera(object):
 
         if portType:
             ns += '/' + portType
-        
+
         wsdlpath = os.path.join(self.wsdl_dir, wsdl_file)
         if not os.path.isfile(wsdlpath):
             raise ONVIFError('No such file: %s' % wsdlpath)
