@@ -15,65 +15,66 @@ moverequest = None
 ptz = None
 active = False
 
-def do_move(ptz, request):
+async def do_move(ptz, request):
     # Start continuous move
     global active
     if active:
-        ptz.Stop({'ProfileToken': request.ProfileToken})
+        await ptz.Stop({'ProfileToken': request.ProfileToken})
     active = True
-    ptz.ContinuousMove(request)
+    await ptz.ContinuousMove(request)
 
-def move_up(ptz, request):
+async def move_up(ptz, request):
     print ('move up...')
     request.Velocity.PanTilt.x = 0
     request.Velocity.PanTilt.y = YMAX
-    do_move(ptz, request)
+    await do_move(ptz, request)
 
-def move_down(ptz, request):
+async def move_down(ptz, request):
     print ('move down...')
     request.Velocity.PanTilt.x = 0
     request.Velocity.PanTilt.y = YMIN
-    do_move(ptz, request)
+    await do_move(ptz, request)
 
-def move_right(ptz, request):
+async def move_right(ptz, request):
     print ('move right...')
     request.Velocity.PanTilt.x = XMAX
     request.Velocity.PanTilt.y = 0
-    do_move(ptz, request)
+    await do_move(ptz, request)
 
-def move_left(ptz, request):
+async def move_left(ptz, request):
     print ('move left...')
     request.Velocity.PanTilt.x = XMIN
     request.Velocity.PanTilt.y = 0
-    do_move(ptz, request)
+    await do_move(ptz, request)
     
 
-def move_upleft(ptz, request):
+async def move_upleft(ptz, request):
     print ('move up left...')
     request.Velocity.PanTilt.x = XMIN
     request.Velocity.PanTilt.y = YMAX
-    do_move(ptz, request)
+    await do_move(ptz, request)
     
-def move_upright(ptz, request):
+async def move_upright(ptz, request):
     print ('move up left...')
     request.Velocity.PanTilt.x = XMAX
     request.Velocity.PanTilt.y = YMAX
-    do_move(ptz, request)
+    await do_move(ptz, request)
     
-def move_downleft(ptz, request):
+async def move_downleft(ptz, request):
     print ('move down left...')
     request.Velocity.PanTilt.x = XMIN
     request.Velocity.PanTilt.y = YMIN
-    do_move(ptz, request)
+    await do_move(ptz, request)
     
-def move_downright(ptz, request):
+async def move_downright(ptz, request):
     print ('move down left...')
     request.Velocity.PanTilt.x = XMAX
     request.Velocity.PanTilt.y = YMIN
-    do_move(ptz, request)
+    await do_move(ptz, request)
 
-def setup_move():
+async def setup_move():
     mycam = ONVIFCamera(IP, PORT, USER, PASS)
+    await mycam.update_xaddrs()
     # Create media service object
     media = mycam.create_media_service()
     
@@ -82,18 +83,18 @@ def setup_move():
     ptz = mycam.create_ptz_service()
 
     # Get target profile
-    media_profile = media.GetProfiles()[0]
+    media_profile = await media.GetProfiles()[0]
 
     # Get PTZ configuration options for getting continuous move range
     request = ptz.create_type('GetConfigurationOptions')
     request.ConfigurationToken = media_profile.PTZConfiguration.token
-    ptz_configuration_options = ptz.GetConfigurationOptions(request)
+    ptz_configuration_options = await ptz.GetConfigurationOptions(request)
 
     global moverequest
     moverequest = ptz.create_type('ContinuousMove')
     moverequest.ProfileToken = media_profile.token
     if moverequest.Velocity is None:
-        moverequest.Velocity = ptz.GetStatus({'ProfileToken': media_profile.token}).Position
+        moverequest.Velocity = await ptz.GetStatus({'ProfileToken': media_profile.token}).Position
 
 
     # Get range of pan and tilt
@@ -112,31 +113,33 @@ def readin():
     selection = sys.stdin.readline().strip("\n")
     lov=[ x for x in selection.split(" ") if x != ""]
     if lov:
-        
+        loop = asyncio.get_event_loop()
         if lov[0].lower() in ["u","up"]:
-            move_up(ptz,moverequest)
+            coro = move_up(ptz,moverequest)
         elif lov[0].lower() in ["d","do","dow","down"]:
-            move_down(ptz,moverequest)
+            coro = move_down(ptz,moverequest)
         elif lov[0].lower() in ["l","le","lef","left"]:
-            move_left(ptz,moverequest)
+            coro = move_left(ptz,moverequest)
         elif lov[0].lower() in ["l","le","lef","left"]:
-            move_left(ptz,moverequest)
+            coro = move_left(ptz,moverequest)
         elif lov[0].lower() in ["r","ri","rig","righ","right"]:
-            move_right(ptz,moverequest)
+            coro = move_right(ptz,moverequest)
         elif lov[0].lower() in ["ul"]:
-            move_upleft(ptz,moverequest)
+            coro = move_upleft(ptz,moverequest)
         elif lov[0].lower() in ["ur"]:
-            move_upright(ptz,moverequest)
+            coro = move_upright(ptz,moverequest)
         elif lov[0].lower() in ["dl"]:
-            move_downleft(ptz,moverequest)
+            coro = move_downleft(ptz,moverequest)
         elif lov[0].lower() in ["dr"]:
-            move_downright(ptz,moverequest)
+            coro = move_downright(ptz,moverequest)
         elif lov[0].lower() in ["s","st","sto","stop"]:
-            ptz.Stop({'ProfileToken': moverequest.ProfileToken})
+            coro = ptz.Stop({'ProfileToken': moverequest.ProfileToken})
             active = False
         else:
             print("What are you asking?\tI only know, 'up','down','left','right', 'ul' (up left), \n\t\t\t'ur' (up right), 'dl' (down left), 'dr' (down right) and 'stop'")
          
+    if coro:
+        loop.call_soon(coro)
     print("")
     print("Your command: ", end='',flush=True)
        

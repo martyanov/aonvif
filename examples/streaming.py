@@ -1,6 +1,7 @@
+import asyncio
 from onvif import ONVIFCamera
 
-def media_profile_configuration():
+async def media_profile_configuration():
     '''
     A media profile consists of configuration entities such as video/audio
     source configuration, video/audio encoder configuration,
@@ -10,21 +11,22 @@ def media_profile_configuration():
 
     # Create the media service
     mycam = ONVIFCamera('192.168.0.112', 80, 'admin', '12345')
+    await mycam.update_xaddrs()
     media_service = mycam.create_media_service()
 
-    profiles = media_service.GetProfiles()
+    profiles = await media_service.GetProfiles()
 
     # Use the first profile and Profiles have at least one
-    token = profiles[0]._token
+    token = profiles[0].token
 
     # Get all video encoder configurations
-    configurations_list = media_service.GetVideoEncoderConfigurations()
+    configurations_list = await media_service.GetVideoEncoderConfigurations()
 
     # Use the first profile and Profiles have at least one
     video_encoder_configuration = configurations_list[0]
 
     # Get video encoder configuration options
-    options = media_service.GetVideoEncoderConfigurationOptions({'ProfileToken':token})
+    options = await media_service.GetVideoEncoderConfigurationOptions({'ProfileToken':token})
 
     # Setup stream configuration
     video_encoder_configuration.Encoding = 'H264'
@@ -52,7 +54,8 @@ def media_profile_configuration():
     request.ForcePersistence = True
 
     # Set the video encoder configuration
-    media_service.SetVideoEncoderConfiguration(request)
+    # await media_service.SetVideoEncoderConfiguration(request)
 
 if __name__ == '__main__':
-    media_profile_configuration()
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(media_profile_configuration())

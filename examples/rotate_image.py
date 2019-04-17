@@ -1,19 +1,21 @@
+import asyncio
 from onvif import ONVIFCamera
 
-def rotate_image_180():
+async def rotate_image_180():
     ''' Rotate the image '''
 
     # Create the media service
     mycam = ONVIFCamera('192.168.0.112', 80, 'admin', '12345')
+    await mycam.update_xaddrs()
     media_service = mycam.create_media_service()
 
-    profiles = media_service.GetProfiles()
+    profiles = await media_service.GetProfiles()
 
     # Use the first profile and Profiles have at least one
-    token = profiles[0]._token
+    token = profiles[0].token
 
     # Get all video source configurations
-    configurations_list = media_service.GetVideoSourceConfigurations()
+    configurations_list = await media_service.GetVideoSourceConfigurations()
 
     # Use the first profile and Profiles have at least one
     video_source_configuration = configurations_list[0]
@@ -29,7 +31,8 @@ def rotate_image_180():
     request.ForcePersistence = True
 
     # Set the video source configuration
-    media_service.SetVideoSourceConfiguration(request)
+    await media_service.SetVideoSourceConfiguration(request)
 
 if __name__ == '__main__':
-    rotate_image_180()
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(rotate_image_180())

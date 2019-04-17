@@ -1,23 +1,24 @@
-python-onvif-zeep
+python-onvif-zeep-async
 ============
 
 ONVIF Client Implementation in Python
 
 Dependencies
 ------------
-`zeep <http://docs.python-zeep.org>`_ >= 3.0.0
+`zeep[async] <http://docs.python-zeep.org>`_ >= 3.0.0
+`aiohttp <https://aiohttp.readthedocs.io>`_ >= 1.0
 
-Install python-onvif-zeep
+Install python-onvif-zeep-async
 -------------------------
 **From Source**
 
 You should clone this repository and run setup.py::
 
-    cd python-onvif-zeep && python setup.py install
+    cd python-onvif-zeep-async && python setup.py install
 
 Alternatively, you can run::
 
-    pip install --upgrade onvif_zeep
+    pip install --upgrade onvif-zeep-async
 
 
 Getting Started
@@ -30,6 +31,7 @@ Initialize an ONVIFCamera instance
 
     from onvif import ONVIFCamera
     mycam = ONVIFCamera('192.168.0.2', 80, 'user', 'passwd', '/etc/onvif/wsdl/')
+    await mycam.update_xaddrs()
 
 Now, an ONVIFCamera instance is available. By default, a devicemgmt service is also available if everything is OK.
 
@@ -44,11 +46,11 @@ Get information from your camera
 ::
 
     # Get Hostname
-    resp = mycam.devicemgmt.GetHostname()
+    resp = await mycam.devicemgmt.GetHostname()
     print 'My camera`s hostname: ' + str(resp.Name)
 
     # Get system date and time
-    dt = mycam.devicemgmt.GetSystemDateAndTime()
+    dt = await mycam.devicemgmt.GetSystemDateAndTime()
     tz = dt.TimeZone
     year = dt.UTCDateTime.Date.Year
     hour = dt.UTCDateTime.Time.Hour
@@ -63,7 +65,7 @@ To configure your camera, there are two ways to pass parameters to service metho
 This is the simpler way::
 
     params = {'Name': 'NewHostName'}
-    device_service.SetHostname(params)
+    await device_service.SetHostname(params)
 
 **Type Instance**
 
@@ -74,7 +76,7 @@ exception if you set an invalid (or non-existent) parameter.
 
     params = mycam.devicemgmt.create_type('SetHostname')
     params.Hostname = 'NewHostName'
-    mycam.devicemgmt.SetHostname(params)
+    await mycam.devicemgmt.SetHostname(params)
 
     time_params = mycam.devicemgmt.create_type('SetSystemDateAndTime')
     time_params.DateTimeType = 'Manual'
@@ -86,7 +88,7 @@ exception if you set an invalid (or non-existent) parameter.
     time_params.UTCDateTime.Time.Hour = 9
     time_params.UTCDateTime.Time.Minute = 36
     time_params.UTCDateTime.Time.Second = 11
-    mycam.devicemgmt.SetSystemDateAndTime(time_params)
+    await mycam.devicemgmt.SetSystemDateAndTime(time_params)
 
 Use other services
 ~~~~~~~~~~~~~~~~~~
@@ -97,17 +99,17 @@ ONVIFCamera has support methods to create new services::
     # Create ptz service
     ptz_service = mycam.create_ptz_service()
     # Get ptz configuration
-    mycam.ptz.GetConfiguration()
+    await mycam.ptz.GetConfiguration()
     # Another way
-    # ptz_service.GetConfiguration()
+    # await ptz_service.GetConfiguration()
 
 Or create an unofficial service::
 
     xaddr = 'http://192.168.0.3:8888/onvif/yourservice'
     yourservice = mycam.create_onvif_service('service.wsdl', xaddr, 'yourservice')
-    yourservice.SomeOperation()
+    await yourservice.SomeOperation()
     # Another way
-    # mycam.yourservice.SomeOperation()
+    # await mycam.yourservice.SomeOperation()
 
 ONVIF CLI
 ---------

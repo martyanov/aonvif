@@ -6,7 +6,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 version_path = os.path.join(here, 'onvif/version.txt')
 version = open(version_path).read().strip()
 
-requires = ['zeep >= 3.0.0']
+requires = ['zeep[async] >= 3.0.0']
 
 CLASSIFIERS = [
     'Development Status :: 3 - Alpha',
@@ -22,8 +22,6 @@ CLASSIFIERS = [
     'Topic :: Multimedia :: Sound/Audio',
     'Topic :: Utilities',
     "Programming Language :: Python",
-    "Programming Language :: Python :: 2",
-    "Programming Language :: Python :: 2.7",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.5",
 ]
@@ -34,9 +32,9 @@ wsdl_dst_dir = 'Lib/site-packages/wsdl' if sys.platform == 'win32' else \
                                                        sys.version_info.minor)
 
 setup(
-      name='onvif_zeep',
+      name='onvif-zeep-async',
       version=version,
-      description='Python Client for ONVIF Camera',
+      description='Async Python Client for ONVIF Camera',
       long_description=open('README.rst', 'r').read(),
       author='Cherish Chen',
       author_email='sinchb128@gmail.com',
@@ -44,7 +42,7 @@ setup(
       maintainer_email='sinchb128@gmail.com',
       license='MIT',
       keywords=['ONVIF', 'Camera', 'IPC'],
-      url='http://github.com/quatanium/python-onvif',
+      url='http://github.com/hunterjm/python-onvif-zeep-async',
       zip_safe=False,
       packages=find_packages(exclude=['docs', 'examples', 'tests']),
       install_requires=requires,
