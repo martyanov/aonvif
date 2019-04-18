@@ -203,6 +203,8 @@ class ONVIFCamera(object):
         self.no_cache = no_cache
         self.adjust_time = adjust_time
         self.transport = transport
+        self.dt_diff = None
+        self.xaddrs = { }
 
         # Active service client container
         self.services = { }
