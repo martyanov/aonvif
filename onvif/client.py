@@ -115,7 +115,11 @@ class ONVIFService(object):
         # Indicate wether password digest is needed
         self.encrypt = encrypt
         self.dt_diff = dt_diff
-        self.create_type = lambda x: self.zeep_client.get_element('ns0:' + x)()
+        
+        namespace = binding_name[binding_name.find('{')+1:binding_name.find('}')]
+        available_ns = self.zeep_client.namespaces
+        ns = list(available_ns.keys())[list(available_ns.values()).index(namespace)] or 'ns0'
+        self.create_type = lambda x: self.zeep_client.get_element(ns + ':' + x)()
 
     @classmethod
     @safe_func
@@ -217,7 +221,8 @@ class ONVIFCamera(object):
         self.dt_diff = None
         self.devicemgmt  = self.create_devicemgmt_service()
         if self.adjust_time :
-            cdate = await self.devicemgmt.GetSystemDateAndTime().UTCDateTime
+            sys_date = await self.devicemgmt.GetSystemDateAndTime()
+            cdate = sys_date.UTCDateTime
             cam_date = dt.datetime(cdate.Date.Year, cdate.Date.Month, cdate.Date.Day, cdate.Time.Hour, cdate.Time.Minute, cdate.Time.Second)
             self.dt_diff = cam_date - dt.datetime.utcnow()
             self.devicemgmt.dt_diff = self.dt_diff
@@ -238,7 +243,8 @@ class ONVIFCamera(object):
         with self.services_lock:
             try:
                 self.event = self.create_events_service()
-                self.xaddrs['http://www.onvif.org/ver10/events/wsdl/PullPointSubscription'] = await self.event.CreatePullPointSubscription().SubscriptionReference.Address._value_1
+                pullpoint = await self.event.CreatePullPointSubscription()
+                self.xaddrs['http://www.onvif.org/ver10/events/wsdl/PullPointSubscription'] = pullpoint.SubscriptionReference.Address._value_1
             except:
                 pass
 
