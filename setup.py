@@ -27,8 +27,8 @@ CLASSIFIERS = [
 ]
 
 wsdl_files = [os.path.join('wsdl', item) for item in os.listdir('wsdl')]
-wsdl_dst_dir = 'Lib/site-packages/wsdl' if sys.platform == 'win32' else \
-               'lib/python%d.%d/site-packages/wsdl' % (sys.version_info.major,
+wsdl_dst_dir = 'Lib/site-packages/onvif/wsdl' if sys.platform == 'win32' else \
+               'lib/python%d.%d/site-packages/onvif/wsdl' % (sys.version_info.major,
                                                        sys.version_info.minor)
 
 setup(

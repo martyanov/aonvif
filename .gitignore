@@ -8,6 +8,7 @@ __pycache__/
 # Distribution / packaging
 .Python
 env/
+venv/
 build/
 develop-eggs/
 dist/
@@ -55,5 +56,6 @@ target/
 
 .idea
 .venv
+.vscode/
 Pipfile
 Pipfile.lock
