@@ -26,11 +26,6 @@ CLASSIFIERS = [
     "Programming Language :: Python :: 3.5",
 ]
 
-wsdl_files = [os.path.join('wsdl', item) for item in os.listdir('wsdl')]
-wsdl_dst_dir = 'Lib/site-packages/onvif/wsdl' if sys.platform == 'win32' else \
-               'lib/python%d.%d/site-packages/onvif/wsdl' % (sys.version_info.major,
-                                                       sys.version_info.minor)
-
 setup(
       name='onvif-zeep-async',
       version=version,
@@ -46,8 +41,11 @@ setup(
       zip_safe=False,
       packages=find_packages(exclude=['docs', 'examples', 'tests']),
       install_requires=requires,
-      include_package_data=True,
-      data_files=[(wsdl_dst_dir, wsdl_files)],
+      package_data={
+          '': ['*.txt', '*.rst'],
+          'onvif': ['*.wsdl', '*.xsd', '*xml*', 'envelope', 'include', 'addressing'],
+          'onvif.wsdl': ['*.wsdl', '*.xsd', '*xml*', 'envelope', 'include', 'addressing'],
+      },
       entry_points={
           'console_scripts': ['onvif-cli = onvif.cli:main']
           }
