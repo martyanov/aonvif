@@ -1,7 +1,7 @@
 python-onvif-zeep-async
 ============
 
-ONVIF Client Implementation in Python
+ONVIF Client Implementation in Python 3
 
 Dependencies
 ------------
