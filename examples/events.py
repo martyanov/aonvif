@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
+"""Example to fetch pullpoint events."""
 import asyncio
 import datetime
 import logging
 
 from onvif import ONVIFCamera
-from zeep.exceptions import Fault
 
 logging.getLogger("zeep").setLevel(logging.DEBUG)
 

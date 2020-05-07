@@ -1,14 +1,8 @@
-from __future__ import print_function, division
+"""ONVIF Client."""
 
-__version__ = "0.0.1"
-import asyncio
+import datetime as dt
 import os.path
-
 import logging
-
-logger = logging.getLogger("onvif")
-logging.basicConfig(level=logging.INFO)
-logging.getLogger("zeep.client").setLevel(logging.CRITICAL)
 
 from zeep.asyncio import AsyncTransport
 from zeep.cache import SqliteCache
@@ -19,11 +13,15 @@ import zeep.helpers
 
 from onvif.exceptions import ONVIFError
 from onvif.definition import SERVICES
-import datetime as dt
 
-# Ensure methods to raise an ONVIFError Exception
-# when some thing was wrong
+logger = logging.getLogger("onvif")
+logging.basicConfig(level=logging.INFO)
+logging.getLogger("zeep.client").setLevel(logging.CRITICAL)
+
+
 def safe_func(func):
+    """Ensure methods to raise an ONVIFError Exception when some thing was wrong."""
+
     def wrapped(*args, **kwargs):
         try:
             return func(*args, **kwargs)
@@ -58,7 +56,7 @@ class UsernameDigestTokenDtDiff(UsernameToken):
         return result
 
 
-class ONVIFService(object):
+class ONVIFService:
     """
     Python Implemention for ONVIF Service.
     Services List:
@@ -139,43 +137,17 @@ class ONVIFService(object):
 
         namespace = binding_name[binding_name.find("{") + 1 : binding_name.find("}")]
         available_ns = self.zeep_client.namespaces
-        ns = (
+        active_ns = (
             list(available_ns.keys())[list(available_ns.values()).index(namespace)]
             or "ns0"
         )
-        self.create_type = lambda x: self.zeep_client.get_element(ns + ":" + x)()
-
-    @classmethod
-    @safe_func
-    def clone(cls, service, *args, **kwargs):
-        clone_service = service.ws_client.clone()
-        kwargs["ws_client"] = clone_service
-        return ONVIFService(*args, **kwargs)
+        self.create_type = lambda x: self.zeep_client.get_element(active_ns + ":" + x)()
 
     @staticmethod
     @safe_func
     def to_dict(zeepobject):
-        # Convert a WSDL Type instance into a dictionary
+        """Convert a WSDL Type instance into a dictionary."""
         return {} if zeepobject is None else zeep.helpers.serialize_object(zeepobject)
-
-    def service_wrapper(self, func):
-        @safe_func
-        def wrapped(params=None):
-            def call(params=None):
-                # No params
-                if params is None:
-                    params = {}
-                else:
-                    params = ONVIFService.to_dict(params)
-                try:
-                    ret = func(**params)
-                except TypeError:
-                    ret = func(params)
-                return ret
-
-            return call(params)
-
-        return wrapped
 
     def __getattr__(self, name):
         """
@@ -184,14 +156,35 @@ class ONVIFService(object):
         APIs detail(API name, request parameters,
         response parameters, parameter types, etc...)
         """
+
+        def service_wrapper(func):
+            """Wrap service call."""
+
+            @safe_func
+            def wrapped(params=None):
+                def call(params=None):
+                    # No params
+                    if params is None:
+                        params = {}
+                    else:
+                        params = ONVIFService.to_dict(params)
+                    try:
+                        ret = func(**params)
+                    except TypeError:
+                        ret = func(params)
+                    return ret
+
+                return call(params)
+
+            return wrapped
+
         builtin = name.startswith("__") and name.endswith("__")
         if builtin:
             return self.__dict__[name]
-        else:
-            return self.service_wrapper(getattr(self.ws_client, name))
+        return service_wrapper(getattr(self.ws_client, name))
 
 
-class ONVIFCamera(object):
+class ONVIFCamera:
     """
     Python Implemention ONVIF compliant device
     This class integrates onvif services
@@ -262,9 +255,9 @@ class ONVIFCamera(object):
         self.to_dict = ONVIFService.to_dict
 
     async def update_xaddrs(self):
-        # Establish devicemgmt service first
+        """Update xaddrs for services."""
         self.dt_diff = None
-        self.devicemgmt = self.create_devicemgmt_service()
+        self.create_devicemgmt_service()
         if self.adjust_time:
             sys_date = await self.devicemgmt.GetSystemDateAndTime()
             cdate = sys_date.UTCDateTime
@@ -278,7 +271,7 @@ class ONVIFCamera(object):
             )
             self.dt_diff = cam_date - dt.datetime.utcnow()
             self.devicemgmt.dt_diff = self.dt_diff
-            self.devicemgmt = self.create_devicemgmt_service()
+            self.create_devicemgmt_service()
         # Get XAddr of services on the device
         self.xaddrs = {}
         capabilities = await self.devicemgmt.GetCapabilities({"Category": "All"})
@@ -286,15 +279,17 @@ class ONVIFCamera(object):
             capability = capabilities[name]
             try:
                 if name.lower() in SERVICES and capability is not None:
-                    ns = SERVICES[name.lower()]["ns"]
-                    self.xaddrs[ns] = capability["XAddr"]
+                    namespace = SERVICES[name.lower()]["ns"]
+                    self.xaddrs[namespace] = capability["XAddr"]
             except Exception:
                 logger.exception("Unexpected service type")
 
     async def create_pullpoint_subscription(self):
+        """Create a pullpoint subscription."""
         try:
-            self.event = self.create_events_service()
-            pullpoint = await self.event.CreatePullPointSubscription()
+            self.create_events_service()
+            pullpoint = await self.events.CreatePullPointSubscription()
+            # pylint: disable=protected-access
             self.xaddrs[
                 "http://www.onvif.org/ver10/events/wsdl/PullPointSubscription"
             ] = pullpoint.SubscriptionReference.Address._value_1
@@ -303,6 +298,7 @@ class ONVIFCamera(object):
         return True
 
     async def update_url(self, host=None, port=None):
+        """Update xaddr urls."""
         changed = False
         if host and self.host != host:
             changed = True
@@ -314,32 +310,33 @@ class ONVIFCamera(object):
         if not changed:
             return
 
-        self.devicemgmt = self.create_devicemgmt_service()
-        self.capabilities = await self.devicemgmt.GetCapabilities()
+        self.create_devicemgmt_service()
+        capabilities = await self.devicemgmt.GetCapabilities()
 
-        for sname in self.services.keys():
-            xaddr = getattr(self.capabilities, sname.capitalize).XAddr
+        for sname in self.services:
+            xaddr = getattr(capabilities, sname.capitalize).XAddr
             await self.services[sname].ws_client.set_options(location=xaddr)
 
     def get_service(self, name, create=True):
+        """Retrieve (or create) and ONVIF service."""
         service = None
         service = getattr(self, name.lower(), None)
         if not service and create:
             return getattr(self, "create_%s_service" % name.lower())()
         return service
 
-    def get_definition(self, name, portType=None):
+    def get_definition(self, name, port_type=None):
         """Returns xaddr and wsdl of specified service"""
         # Check if the service is supported
         if name not in SERVICES:
             raise ONVIFError("Unknown service %s" % name)
         wsdl_file = SERVICES[name]["wsdl"]
-        ns = SERVICES[name]["ns"]
+        namespace = SERVICES[name]["ns"]
 
-        binding_name = "{%s}%s" % (ns, SERVICES[name]["binding"])
+        binding_name = "{%s}%s" % (namespace, SERVICES[name]["binding"])
 
-        if portType:
-            ns += "/" + portType
+        if port_type:
+            namespace += "/" + port_type
 
         wsdlpath = os.path.join(self.wsdl_dir, wsdl_file)
         if not os.path.isfile(wsdlpath):
@@ -356,17 +353,17 @@ class ONVIFCamera(object):
             return xaddr, wsdlpath, binding_name
 
         # Get other XAddr
-        xaddr = self.xaddrs.get(ns)
+        xaddr = self.xaddrs.get(namespace)
         if not xaddr:
             raise ONVIFError("Device doesn`t support service: %s" % name)
 
         return xaddr, wsdlpath, binding_name
 
-    def create_onvif_service(self, name, portType=None):
+    def create_onvif_service(self, name, port_type=None):
         """Create ONVIF service client"""
 
         name = name.lower()
-        xaddr, wsdl_file, binding_name = self.get_definition(name, portType)
+        xaddr, wsdl_file, binding_name = self.get_definition(name, port_type)
 
         service = ONVIFService(
             xaddr,
@@ -382,51 +379,67 @@ class ONVIFCamera(object):
 
         self.services[name] = service
 
-        setattr(self, name, service)
         if not self.services_template.get(name):
             self.services_template[name] = service
 
         return service
 
     def create_devicemgmt_service(self):
-        # The entry point for devicemgmt service is fixed.
+        """Service creation helper."""
         return self.create_onvif_service("devicemgmt")
 
     def create_media_service(self):
+        """Service creation helper."""
         return self.create_onvif_service("media")
 
     def create_ptz_service(self):
+        """Service creation helper."""
         return self.create_onvif_service("ptz")
 
     def create_imaging_service(self):
+        """Service creation helper."""
         return self.create_onvif_service("imaging")
 
     def create_deviceio_service(self):
+        """Service creation helper."""
         return self.create_onvif_service("deviceio")
 
     def create_events_service(self):
+        """Service creation helper."""
         return self.create_onvif_service("events")
 
     def create_analytics_service(self):
+        """Service creation helper."""
         return self.create_onvif_service("analytics")
 
     def create_recording_service(self):
+        """Service creation helper."""
         return self.create_onvif_service("recording")
 
     def create_search_service(self):
+        """Service creation helper."""
         return self.create_onvif_service("search")
 
     def create_replay_service(self):
+        """Service creation helper."""
         return self.create_onvif_service("replay")
 
     def create_pullpoint_service(self):
-        return self.create_onvif_service("pullpoint", portType="PullPointSubscription")
+        """Service creation helper."""
+        return self.create_onvif_service("pullpoint", port_type="PullPointSubscription")
 
     def create_notification_service(self):
-        return self.create_onvif_service('notification')
+        """Service creation helper."""
+        return self.create_onvif_service("notification")
 
-    def create_subscription_service(self, portType=None):
-        return self.create_onvif_service("subscription", portType=portType)
+    def create_subscription_service(self, port_type=None):
+        """Service creation helper."""
+        return self.create_onvif_service("subscription", port_type=port_type)
 
     def create_receiver_service(self):
+        """Service creation helper."""
         return self.create_onvif_service("receiver")
+
+    def __getattr__(self, name):
+        """Retrieve ONVIF service."""
+        return self.services.get(name)

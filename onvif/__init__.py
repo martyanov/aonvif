@@ -1,3 +1,6 @@
+"""Initialize onvif."""
+import zeep
+
 from onvif.client import ONVIFService, ONVIFCamera, SERVICES
 from onvif.exceptions import (
     ONVIFError,
@@ -7,11 +10,9 @@ from onvif.exceptions import (
     ERR_ONVIF_BUILD,
 )
 
-# from onvif import cli
-import zeep
 
-# Monkey patch zeep
 def zeep_pythonvalue(self, xmlvalue):
+    """Monkey patch zeep."""
     return xmlvalue
 
 
@@ -26,5 +27,5 @@ __all__ = (
     "ERR_ONVIF_PROTOCOL",
     "ERR_ONVIF_WSDL",
     "ERR_ONVIF_BUILD",
-    "SERVICES",  # , 'cli'
+    "SERVICES",
 )

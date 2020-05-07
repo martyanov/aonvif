@@ -1,3 +1,5 @@
+"""ONVIF Service Definitions"""
+
 SERVICES = {
     "devicemgmt": {
         "ns": "http://www.onvif.org/ver10/device/wsdl",

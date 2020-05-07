@@ -16,20 +16,26 @@ SUPPORTED_SERVICES = SERVICES.keys()
 
 
 class ThrowingArgumentParser(ArgumentParser):
+    """Exception throwing argument parser."""
+
     def error(self, message):
         usage = self.format_usage()
         raise ValueError("%s\n%s" % (message, usage))
 
 
 def success(message):
+    """Print success message."""
     print("True: " + str(message))
 
 
 def error(message):
+    """Print error message."""
     print("False: " + str(message))
 
 
 class ONVIFCLI(Cmd):
+    """ONVIF CLI class."""
+
     prompt = "ONVIF >>> "
     client = None
     cmd_parser = None
@@ -50,7 +56,7 @@ class ONVIFCLI(Cmd):
         self.create_cmd_parser()
 
     def create_cmd_parser(self):
-        # Create parser to parse CMD, `params` is optional.
+        """Create parser to parse CMD, `params` is optional."""
         cmd_parser = ThrowingArgumentParser(
             prog="ONVIF CMD", usage="CMD service operation [params]"
         )
@@ -103,9 +109,9 @@ class ONVIFCLI(Cmd):
         except ONVIFError:
             error({})
 
+    # pylint: disable=no-self-use
     def complete_cmd(self, text, line, begidx, endidx):
-        # TODO: complete service operations
-        # service.ws_client.service._ServiceSelector__services[0].ports[0].methods.keys()
+        """Complete command."""
         if not text:
             completions = SUPPORTED_SERVICES[:]
         else:
@@ -113,13 +119,17 @@ class ONVIFCLI(Cmd):
         return completions
 
     def emptyline(self):
+        """Empty line."""
         return ""
 
+    # pylint: disable=no-self-use,invalid-name
     def do_EOF(self, line):
+        """End of file."""
         return True
 
 
 def create_parser():
+    """Create parser."""
     parser = ThrowingArgumentParser(description=__doc__)
     # Dealwith dependency for service, operation and params
     parser.add_argument(
@@ -180,8 +190,7 @@ def create_parser():
 
 
 def main():
-    INTRO = __doc__
-
+    """Main entrypoint."""
     # Create argument parser
     parser = create_parser()
     try:
