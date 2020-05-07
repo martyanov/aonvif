@@ -1,5 +1,4 @@
 SERVICES = {
-    # Name                              namespace                           wsdl file                      binding name
     "devicemgmt": {
         "ns": "http://www.onvif.org/ver10/device/wsdl",
         "wsdl": "devicemgmt.wsdl",
@@ -35,6 +34,16 @@ SERVICES = {
         "wsdl": "events.wsdl",
         "binding": "PullPointSubscriptionBinding",
     },
+    "notification": {
+        "ns": "http://www.onvif.org/ver10/events/wsdl",
+        "wsdl": "events.wsdl",
+        "binding": "NotificationProducerBinding",
+    },
+    "subscription": {
+        "ns": "http://www.onvif.org/ver10/events/wsdl",
+        "wsdl": "events.wsdl",
+        "binding": "SubscriptionManagerBinding",
+    },
     "analytics": {
         "ns": "http://www.onvif.org/ver20/analytics/wsdl",
         "wsdl": "analytics.wsdl",
@@ -61,8 +70,3 @@ SERVICES = {
         "binding": "ReceiverBinding",
     },
 }
-
-#
-# NSMAP = { }
-# for name, item in SERVICES.items():
-#    NSMAP[item['ns']] = name
