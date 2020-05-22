@@ -4,6 +4,7 @@ import datetime as dt
 import os.path
 import logging
 
+from aiohttp import ClientSession
 from zeep.asyncio import AsyncTransport
 from zeep.cache import SqliteCache
 from zeep.client import Client, CachingClient, Settings
@@ -106,23 +107,25 @@ class ONVIFService:
 
         self.url = url
         self.xaddr = xaddr
+        self.transport = transport
         wsse = UsernameDigestTokenDtDiff(
             user, passwd, dt_diff=dt_diff, use_digest=encrypt
         )
         # Create soap client
         if not zeep_client:
-            if not transport:
-                transport = (
-                    AsyncTransport(None)
+            if not self.transport:
+                session = ClientSession()
+                self.transport = (
+                    AsyncTransport(None, session=session)
                     if no_cache
-                    else AsyncTransport(None, cache=SqliteCache())
+                    else AsyncTransport(None, session=session, cache=SqliteCache())
                 )
             ClientType = Client if no_cache else CachingClient
             settings = Settings()
             settings.strict = False
             settings.xml_huge_tree = True
             self.zeep_client = ClientType(
-                wsdl=url, wsse=wsse, transport=transport, settings=settings
+                wsdl=url, wsse=wsse, transport=self.transport, settings=settings
             )
         else:
             self.zeep_client = zeep_client
@@ -142,6 +145,10 @@ class ONVIFService:
             or "ns0"
         )
         self.create_type = lambda x: self.zeep_client.get_element(active_ns + ":" + x)()
+
+    async def close(self):
+        """Close the transport session."""
+        await self.transport.session.close()
 
     @staticmethod
     @safe_func
@@ -204,25 +211,6 @@ class ONVIFCamera:
     # Another way:
     >>> ptz_service.GetConfiguration()
     """
-
-    # Class-level variables
-    services_template = {
-        "devicemgmt": None,
-        "ptz": None,
-        "media": None,
-        "imaging": None,
-        "events": None,
-        "analytics": None,
-    }
-    use_services_template = {
-        "devicemgmt": True,
-        "ptz": True,
-        "media": True,
-        "imaging": True,
-        "events": True,
-        "analytics": True,
-    }
-
     def __init__(
         self,
         host,
@@ -257,9 +245,9 @@ class ONVIFCamera:
     async def update_xaddrs(self):
         """Update xaddrs for services."""
         self.dt_diff = None
-        self.create_devicemgmt_service()
+        devicemgmt = self.create_devicemgmt_service()
         if self.adjust_time:
-            sys_date = await self.devicemgmt.GetSystemDateAndTime()
+            sys_date = await devicemgmt.GetSystemDateAndTime()
             cdate = sys_date.UTCDateTime
             cam_date = dt.datetime(
                 cdate.Date.Year,
@@ -270,11 +258,10 @@ class ONVIFCamera:
                 cdate.Time.Second,
             )
             self.dt_diff = cam_date - dt.datetime.utcnow()
-            self.devicemgmt.dt_diff = self.dt_diff
-            self.create_devicemgmt_service()
+
         # Get XAddr of services on the device
         self.xaddrs = {}
-        capabilities = await self.devicemgmt.GetCapabilities({"Category": "All"})
+        capabilities = await devicemgmt.GetCapabilities({"Category": "All"})
         for name in capabilities:
             capability = capabilities[name]
             try:
@@ -287,8 +274,8 @@ class ONVIFCamera:
     async def create_pullpoint_subscription(self):
         """Create a pullpoint subscription."""
         try:
-            self.create_events_service()
-            pullpoint = await self.events.CreatePullPointSubscription()
+            events = self.create_events_service()
+            pullpoint = await events.CreatePullPointSubscription()
             # pylint: disable=protected-access
             self.xaddrs[
                 "http://www.onvif.org/ver10/events/wsdl/PullPointSubscription"
@@ -297,33 +284,10 @@ class ONVIFCamera:
             return False
         return True
 
-    async def update_url(self, host=None, port=None):
-        """Update xaddr urls."""
-        changed = False
-        if host and self.host != host:
-            changed = True
-            self.host = host
-        if port and self.port != port:
-            changed = True
-            self.port = port
-
-        if not changed:
-            return
-
-        self.create_devicemgmt_service()
-        capabilities = await self.devicemgmt.GetCapabilities()
-
-        for sname in self.services:
-            xaddr = getattr(capabilities, sname.capitalize).XAddr
-            await self.services[sname].ws_client.set_options(location=xaddr)
-
-    def get_service(self, name, create=True):
-        """Retrieve (or create) and ONVIF service."""
-        service = None
-        service = getattr(self, name.lower(), None)
-        if not service and create:
-            return getattr(self, "create_%s_service" % name.lower())()
-        return service
+    async def close(self):
+        """Close all transports."""
+        for service in self.services.values():
+            await service.close()
 
     def get_definition(self, name, port_type=None):
         """Returns xaddr and wsdl of specified service"""
@@ -365,6 +329,10 @@ class ONVIFCamera:
         name = name.lower()
         xaddr, wsdl_file, binding_name = self.get_definition(name, port_type)
 
+        # Don't re-create bindings
+        if binding_name in self.services:
+            return self.services[binding_name]
+
         service = ONVIFService(
             xaddr,
             self.user,
@@ -377,10 +345,7 @@ class ONVIFCamera:
             transport=self.transport,
         )
 
-        self.services[name] = service
-
-        if not self.services_template.get(name):
-            self.services_template[name] = service
+        self.services[binding_name] = service
 
         return service
 
@@ -439,7 +404,3 @@ class ONVIFCamera:
     def create_receiver_service(self):
         """Service creation helper."""
         return self.create_onvif_service("receiver")
-
-    def __getattr__(self, name):
-        """Retrieve ONVIF service."""
-        return self.services.get(name)

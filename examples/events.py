@@ -1,7 +1,9 @@
 """Example to fetch pullpoint events."""
 import asyncio
-import datetime
+import datetime as dt
+from pytz import UTC
 import logging
+from zeep import xsd
 
 from onvif import ONVIFCamera
 
@@ -9,7 +11,13 @@ logging.getLogger("zeep").setLevel(logging.DEBUG)
 
 
 async def run():
-    mycam = ONVIFCamera("192.168.3.14", 80, "admin", "admin")
+    mycam = ONVIFCamera(
+        "192.168.3.10",
+        80,
+        "hass",
+        "peek4boo",
+        wsdl_dir="/home/jason/python-onvif-zeep-async/onvif/wsdl",
+    )
     await mycam.update_xaddrs()
 
     if not await mycam.create_pullpoint_subscription():
@@ -26,11 +34,15 @@ async def run():
     await pullpoint.SetSynchronizationPoint()
     req = pullpoint.create_type("PullMessages")
     req.MessageLimit = 100
-    req.Timeout = datetime.timedelta(seconds=30)
+    req.Timeout = dt.timedelta(seconds=30)
     messages = await pullpoint.PullMessages(req)
     print(messages)
 
     subscription = mycam.create_subscription_service("PullPointSubscription")
+    # req = subscription.zeep_client.get_element("ns5:Renew")
+    # req.TerminationTime = str(dt.datetime.now(UTC) + dt.timedelta(minutes=10))
+    termination_time = (dt.datetime.now(UTC) + dt.timedelta(minutes=10)).isoformat()
+    await subscription.Renew(termination_time)
     await subscription.Unsubscribe()
 
 
