@@ -16,7 +16,7 @@ async def run():
         80,
         "hass",
         "peek4boo",
-        wsdl_dir="/home/jason/python-onvif-zeep-async/onvif/wsdl",
+        wsdl_dir="/home/jane/onvif/wsdl",
     )
     await mycam.update_xaddrs()
 

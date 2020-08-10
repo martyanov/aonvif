@@ -1,51 +1,71 @@
-"""Package Setup."""
-import os
-from setuptools import setup, find_packages
+import setuptools
 
-here = os.path.abspath(os.path.dirname(__file__))
-version_path = os.path.join(here, "onvif/version.txt")
-version = open(version_path).read().strip()
 
-requires = ["zeep[async] >= 3.0.0", "aiohttp>=1.0"]
+def _get_long_description():
+    with open('README.rst') as readme_file:
+        return readme_file.read()
 
-CLASSIFIERS = [
-    "Development Status :: 3 - Alpha",
-    "Environment :: Console",
-    "Intended Audience :: Customer Service",
-    "Intended Audience :: Developers",
-    "Intended Audience :: Education",
-    "Intended Audience :: Science/Research",
-    "Intended Audience :: Telecommunications Industry",
-    "Natural Language :: English",
-    "Operating System :: POSIX",
-    "Topic :: Software Development :: Libraries :: Python Modules",
-    "Topic :: Multimedia :: Sound/Audio",
-    "Topic :: Utilities",
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.5",
-]
 
-setup(
-    name="onvif-zeep-async",
-    version=version,
-    description="Async Python Client for ONVIF Camera",
-    long_description=open("README.rst", "r").read(),
-    author="Cherish Chen",
-    author_email="sinchb128@gmail.com",
-    maintainer="sinchb",
-    maintainer_email="sinchb128@gmail.com",
-    license="MIT",
-    keywords=["ONVIF", "Camera", "IPC"],
-    url="http://github.com/hunterjm/python-onvif-zeep-async",
+setuptools.setup(
+    name='aonvif',
+    version='0.1.0rc1',
+    description='ONVIF asynchronous client implementation in Python',
+    long_description=_get_long_description(),
+    author='Andrey Martyanov',
+    author_email='andrey@martyanov.com',
+    url='https://github.com/martyanov/aonvif',
+    license='MIT',
+    keywords=['onvif', 'client', 'asyncio'],
+    classifiers=[
+        'Development Status :: 3 - Alpha',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: MIT License',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+    ],
     zip_safe=False,
-    python_requires=">=3",
-    packages=find_packages(exclude=["docs", "examples", "tests"]),
-    install_requires=requires,
-    package_data={
-        "": ["*.txt", "*.rst"],
-        "onvif": ["*.wsdl", "*.xsd", "*xml*", "envelope", "include", "addressing"],
-        "onvif.wsdl": ["*.wsdl", "*.xsd", "*xml*", "envelope", "include", "addressing"],
+    project_urls={
+        'Bug Reports': 'https://github.com/martyanov/onvif/issues',
+        'Repository': 'https://github.com/martyanov/onvif',
     },
-    entry_points={"console_scripts": ["onvif-cli = onvif.cli:main"]},
+    python_requires='>=3.7,<4.0',
+    packages=setuptools.find_packages(
+        exclude=[
+            'docs',
+            'examples',
+            'tests',
+        ],
+    ),
+    package_data={
+        '': [
+            '*.txt',
+            '*.rst',
+        ],
+        'onvif': [
+            '*.wsdl',
+            '*.xsd',
+            '*xml*',
+            'envelope',
+            'include',
+            'addressing',
+        ],
+        'onvif.wsdl': [
+            '*.wsdl',
+            '*.xsd',
+            '*xml*',
+            'envelope',
+            'include',
+            'addressing',
+        ],
+    },
+    install_requires=[
+        'aiohttp>=1.0',
+        'zeep[async]>=3.0.0',
+    ],
+    entry_points={
+        'console_scripts': [
+            'onvif-cli = onvif.cli:main',
+        ],
+    },
 )

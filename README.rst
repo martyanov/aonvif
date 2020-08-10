@@ -1,25 +1,14 @@
-python-onvif-zeep-async
-=======================
+aonvif
+======
 
-ONVIF Client Implementation in Python 3
+ONVIF asynchronous client implementation in Python.
 
-Dependencies
+Installation
 ------------
-`zeep[async] <http://docs.python-zeep.org>`_ >= 3.0.0
-`aiohttp <https://aiohttp.readthedocs.io>`_ >= 1.0
 
-Install python-onvif-zeep-async
--------------------------------
-**From Source**
+.. code:: bash
 
-You should clone this repository and run setup.py::
-
-    cd python-onvif-zeep-async && python setup.py install
-
-Alternatively, you can run::
-
-    pip install --upgrade onvif-zeep-async
-
+    $ python3 -m pip install aonvif
 
 Getting Started
 ---------------
