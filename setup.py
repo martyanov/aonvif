@@ -8,7 +8,7 @@ def _get_long_description():
 
 setuptools.setup(
     name='aonvif',
-    version='0.1.0rc1',
+    version='0.1.0rc2',
     description='ONVIF asynchronous client implementation in Python',
     long_description=_get_long_description(),
     author='Andrey Martyanov',
