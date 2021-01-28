@@ -61,7 +61,7 @@ setuptools.setup(
     },
     install_requires=[
         'aiohttp>=1.0,<4.0',
-        'zeep[async]>=3.0,<4.0',
+        'zeep[async]>=3.0,<=4.0',
     ],
     entry_points={
         'console_scripts': [
