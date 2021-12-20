@@ -1,6 +1,24 @@
 aonvif
 ======
 
+.. start-inclusion-marker-do-not-remove
+
+.. image:: https://github.com/martyanov/aonvif/workflows/CI/badge.svg?event=push
+   :alt: Build Status
+   :target: https://github.com/martyanov/aonvif/actions?query=event%3Apush+branch%3Amaster+workflow%3ACI
+
+.. image:: https://img.shields.io/pypi/v/aonvif.svg
+   :alt: PyPI Version
+   :target: https://pypi.python.org/pypi/aonvif
+
+.. image:: https://img.shields.io/pypi/pyversions/aonvif.svg
+   :alt: Supported Python Versions
+   :target: https://pypi.python.org/pypi/aonvif
+
+.. image:: https://img.shields.io/pypi/l/aonvif.svg
+   :alt: License
+   :target: https://pypi.python.org/pypi/aonvif
+
 ONVIF asynchronous client implementation in Python.
 
 Installation
