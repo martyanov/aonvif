@@ -8,7 +8,7 @@ def _get_long_description():
 
 setuptools.setup(
     name='aonvif',
-    version='0.1.0rc2',
+    use_scm_version=True,
     description='ONVIF asynchronous client implementation in Python',
     long_description=_get_long_description(),
     author='Andrey Martyanov',
@@ -29,7 +29,6 @@ setuptools.setup(
         'Bug Reports': 'https://github.com/martyanov/onvif/issues',
         'Repository': 'https://github.com/martyanov/onvif',
     },
-    python_requires='>=3.7,<4',
     packages=setuptools.find_packages(
         exclude=[
             'examples',
@@ -58,6 +57,10 @@ setuptools.setup(
             'addressing',
         ],
     },
+    python_requires='>=3.7,<4',
+    setup_requires=[
+        'setuptools_scm==6.3.2',
+    ],
     install_requires=[
         'aiohttp>=3,<4',
         'zeep[async]>=3,<4',
