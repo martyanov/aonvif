@@ -1,5 +1,3 @@
-""" Core exceptions raised by the ONVIF Client """
-
 # Error codes setting
 # Error unknown, e.g, HTTP errors
 ERR_ONVIF_UNKNOWN = 1

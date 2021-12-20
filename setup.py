@@ -29,10 +29,9 @@ setuptools.setup(
         'Bug Reports': 'https://github.com/martyanov/onvif/issues',
         'Repository': 'https://github.com/martyanov/onvif',
     },
-    python_requires='>=3.7,<4.0',
+    python_requires='>=3.7,<4',
     packages=setuptools.find_packages(
         exclude=[
-            'docs',
             'examples',
             'tests',
         ],
@@ -60,12 +59,23 @@ setuptools.setup(
         ],
     },
     install_requires=[
-        'aiohttp>=1.0,<4.0',
-        'zeep[async]>=3.0,<4.0',
+        'aiohttp>=3,<4',
+        'zeep[async]>=3,<4',
     ],
+    extras_require={
+        'dev': [
+            'flake8==4.0.1',
+            'twine==3.7.1',
+        ],
+        'test': [
+            'pytest-asyncio==0.16.0',
+            'pytest-cov==3.0.0',
+            'pytest==6.2.5',
+        ],
+    },
     entry_points={
         'console_scripts': [
-            'onvif-cli = onvif.cli:main',
+            'onvif-cli=onvif.cli:main',
         ],
     },
 )

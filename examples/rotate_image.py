@@ -1,5 +1,7 @@
 import asyncio
+
 from onvif import ONVIFCamera
+
 
 async def rotate_image_180():
     ''' Rotate the image '''
@@ -12,7 +14,7 @@ async def rotate_image_180():
     profiles = await media_service.GetProfiles()
 
     # Use the first profile and Profiles have at least one
-    token = profiles[0].token
+    _ = profiles[0].token
 
     # Get all video source configurations
     configurations_list = await media_service.GetVideoSourceConfigurations()

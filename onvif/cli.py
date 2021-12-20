@@ -1,5 +1,5 @@
 #!/usr/bin/python
-"""ONVIF Client Command Line Interface"""
+
 from __future__ import print_function, division
 import re
 from cmd import Cmd
@@ -88,15 +88,15 @@ class ONVIFCLI(Cmd):
 
         try:
             args.params = dict(literal_eval(match.group(1)))
-        except ValueError as err:
-            return error("Invalid params")
+        except ValueError as e:
+            return error(f"Invalid params: {e!r}")
 
         try:
             # Get ONVIF service
             service = self.client.get_service(args.service)
             # Actually execute the command and get the response
             response = getattr(service, args.operation)(args.params)
-        except MethodNotFound as err:
+        except MethodNotFound:
             return error("No Operation: %s" % args.operation)
         except Exception as err:
             return error(err)

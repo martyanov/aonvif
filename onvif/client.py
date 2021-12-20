@@ -1,5 +1,3 @@
-"""ONVIF Client."""
-
 import datetime as dt
 import os.path
 import logging
@@ -15,6 +13,7 @@ import zeep.helpers
 from onvif.exceptions import ONVIFError
 from onvif.definition import SERVICES
 
+
 logger = logging.getLogger("onvif")
 logging.basicConfig(level=logging.INFO)
 logging.getLogger("zeep.client").setLevel(logging.CRITICAL)
@@ -27,7 +26,6 @@ def safe_func(func):
         try:
             return func(*args, **kwargs)
         except Exception as err:
-            # print('Ouuups: err =', err, ', func =', func, ', args =', args, ', kwargs =', kwargs)
             raise ONVIFError(err)
 
     return wrapped
@@ -138,7 +136,7 @@ class ONVIFService:
         self.encrypt = encrypt
         self.dt_diff = dt_diff
 
-        namespace = binding_name[binding_name.find("{") + 1 : binding_name.find("}")]
+        namespace = binding_name[binding_name.find("{") + 1: binding_name.find("}")]
         available_ns = self.zeep_client.namespaces
         active_ns = (
             list(available_ns.keys())[list(available_ns.values()).index(namespace)]
@@ -199,7 +197,8 @@ class ONVIFCamera:
     adjust_time parameter allows authentication on cameras without being time synchronized.
     Please note that using NTP on both end is the recommended solution,
     this should only be used in "safe" environments.
-    Also, this cannot be used on AXIS camera, as every request is authenticated, contrary to ONVIF standard
+    Also, this cannot be used on AXIS camera, as every request is authenticated,
+    contrary to ONVIF standard
 
     >>> from onvif import ONVIFCamera
     >>> mycam = ONVIFCamera('192.168.0.112', 80, 'admin', '12345')

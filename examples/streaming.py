@@ -1,5 +1,7 @@
 import asyncio
+
 from onvif import ONVIFCamera
+
 
 async def media_profile_configuration():
     '''
@@ -26,26 +28,26 @@ async def media_profile_configuration():
     video_encoder_configuration = configurations_list[0]
 
     # Get video encoder configuration options
-    options = await media_service.GetVideoEncoderConfigurationOptions({'ProfileToken':token})
+    options = await media_service.GetVideoEncoderConfigurationOptions({'ProfileToken': token})
 
     # Setup stream configuration
     video_encoder_configuration.Encoding = 'H264'
     # Setup Resolution
-    video_encoder_configuration.Resolution.Width = \
-                    options.H264.ResolutionsAvailable[0].Width
-    video_encoder_configuration.Resolution.Height = \
-                    options.H264.ResolutionsAvailable[0].Height
+    video_encoder_configuration.Resolution.Width = (
+        options.H264.ResolutionsAvailable[0].Width)
+    video_encoder_configuration.Resolution.Height = (
+        options.H264.ResolutionsAvailable[0].Height)
     # Setup Quality
     video_encoder_configuration.Quality = options.QualityRange.Min
     # Setup FramRate
-    video_encoder_configuration.RateControl.FrameRateLimit = \
-                                    options.H264.FrameRateRange.Min
+    video_encoder_configuration.RateControl.FrameRateLimit = (
+        options.H264.FrameRateRange.Min)
     # Setup EncodingInterval
-    video_encoder_configuration.RateControl.EncodingInterval = \
-                                    options.H264.EncodingIntervalRange.Min
+    video_encoder_configuration.RateControl.EncodingInterval = (
+        options.H264.EncodingIntervalRange.Min)
     # Setup Bitrate
-    video_encoder_configuration.RateControl.BitrateLimit = \
-                            options.Extension.H264[0].BitrateRange[0].Min[0]
+    video_encoder_configuration.RateControl.BitrateLimit = (
+        options.Extension.H264[0].BitrateRange[0].Min[0])
 
     # Create request type instance
     request = media_service.create_type('SetVideoEncoderConfiguration')
