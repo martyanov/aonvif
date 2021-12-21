@@ -30,7 +30,7 @@ Installation
 
 .. code:: bash
 
-    $ python3 -m pip install aonvif
+    $ python -m pip install aonvif
 
 Getting Started
 ---------------
@@ -104,7 +104,7 @@ exception if you set an invalid (or non-existent) parameter.
 Use other services
 ~~~~~~~~~~~~~~~~~~
 ONVIF protocol has defined many services.
-You can find all the services and operations `here <http://www.onvif.org/onvif/ver20/util/operationIndex.html>`_.
+You can find all the services and operations `here <https://www.onvif.org/onvif/ver20/util/operationIndex.html>`_.
 ONVIFCamera has support methods to create new services::
 
     # Create ptz service
@@ -173,10 +173,6 @@ Batch mode
 References
 ----------
 
-* `ONVIF Offical Website <http://www.onvif.com>`_
+* `Operations Index <https://www.onvif.org/onvif/ver20/util/operationIndex.html>`_
 
-* `Operations Index <http://www.onvif.org/onvif/ver20/util/operationIndex.html>`_
-
-* `ONVIF Develop Documents <http://www.onvif.org/specs/DocMap-2.4.2.html>`_
-
-* `Foscam Python Lib <http://github.com/quatanium/foscam-python-lib>`_
+* `ONVIF Specifications <https://www.onvif.org/profiles-add-ons-specifications/>`_
