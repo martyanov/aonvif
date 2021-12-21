@@ -39,16 +39,7 @@ setuptools.setup(
     ),
     package_data={
         '': [
-            '*.txt',
             '*.rst',
-        ],
-        'onvif': [
-            '*.wsdl',
-            '*.xsd',
-            '*xml*',
-            'envelope',
-            'include',
-            'addressing',
         ],
         'onvif.wsdl': [
             '*.wsdl',
