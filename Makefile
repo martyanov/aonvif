@@ -1,5 +1,5 @@
 .DEFAULT: help
-.PHONY: help bootstrap build lint outdated test testreport upload clean
+.PHONY: help bootstrap build lint outdated test testcov testreport upload clean
 
 VENV = .venv
 PYTHON_BIN ?= python3
@@ -13,6 +13,7 @@ help:
 	@echo "  lint       - inspect project source code for errors"
 	@echo "  outdated   - list outdated project requirements"
 	@echo "  test       - run project tests"
+	@echo "  testcov    - run project tests with coverage file report"
 	@echo "  testreport - run project tests and open HTML coverage report"
 	@echo "  upload     - upload built packages to package repository"
 	@echo "  clean      - clean up project environment and all the build artifacts"
@@ -35,6 +36,9 @@ outdated: bootstrap
 test: bootstrap
 	$(PYTHON) -m pytest
 
+testcov: bootstrap
+	$(PYTHON) -m pytest --cov-report=xml
+
 testreport: bootstrap
 	$(PYTHON) -m pytest --cov-report=html
 	xdg-open htmlcov/index.html
@@ -43,4 +47,4 @@ upload: build
 	$(PYTHON) -m twine upload dist/*
 
 clean:
-	rm -rf *.egg-info .eggs .pytest_cache build dist htmlcov $(VENV)
+	rm -rf *.egg-info .eggs .pytest_cache coverage.xml build dist htmlcov $(VENV)

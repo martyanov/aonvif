@@ -41,7 +41,11 @@ jobs:
         python-version: ${{ matrix.python_version }}
 
     - name: Run tests on Python ${{ matrix.python_version }}
-      run: make test
+      run: make testcov
+
+    - name: Upload coverage report
+      uses: codecov/codecov-action@v1
+      if: matrix.python_version == '3.9' && github.ref == 'refs/heads/master'
 
   distrib:
     name: Build and upload the packages
