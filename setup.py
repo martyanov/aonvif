@@ -69,7 +69,14 @@ setuptools.setup(
     ],
     extras_require={
         'dev': [
+            'flake8-broken-line==0.4.0',
+            'flake8-bugbear==21.11.29',
+            'flake8-commas==2.1.0',
+            'flake8-comprehensions==3.7.0',
+            'flake8-isort==4.1.1',
+            'flake8-quotes==3.3.1',
             'flake8==4.0.1',
+            'pep8-naming==0.12.1',
             'twine==3.7.1',
         ],
         'test': [

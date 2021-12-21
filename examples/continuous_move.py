@@ -1,12 +1,13 @@
 import asyncio
 import sys
 
-from onvif import ONVIFCamera
+import onvif
 
-IP = "192.168.0.100"  # Camera IP address
+
+IP = '192.168.0.100'  # Camera IP address
 PORT = 10080  # Port
-USER = "admin"  # Username
-PASS = "password"  # Password
+USER = 'admin'  # Username
+PASS = 'password'  # Password
 
 XMAX = 1
 XMIN = -1
@@ -83,7 +84,7 @@ async def move_downright(ptz, request):
 
 
 async def setup_move():
-    mycam = ONVIFCamera(IP, PORT, USER, PASS)
+    mycam = onvif.ONVIFCamera(IP, PORT, USER, PASS)
     await mycam.update_xaddrs()
     # Create media service object
     media = mycam.create_media_service()
@@ -120,44 +121,44 @@ async def setup_move():
 
 
 def readin():
-    """Reading from stdin and displaying menu"""
+    """Reading from stdin and displaying menu."""
     global moverequest, ptz
 
-    selection = sys.stdin.readline().strip("\n")
-    lov = [x for x in selection.split(" ") if x != ""]
+    selection = sys.stdin.readline().strip('\n')
+    lov = [x for x in selection.split(' ') if x != '']
     if lov:
         loop = asyncio.get_event_loop()
-        if lov[0].lower() in ["u", "up"]:
+        if lov[0].lower() in ['u', 'up']:
             coro = move_up(ptz, moverequest)
-        elif lov[0].lower() in ["d", "do", "dow", "down"]:
+        elif lov[0].lower() in ['d', 'do', 'dow', 'down']:
             coro = move_down(ptz, moverequest)
-        elif lov[0].lower() in ["l", "le", "lef", "left"]:
+        elif lov[0].lower() in ['l', 'le', 'lef', 'left']:
             coro = move_left(ptz, moverequest)
-        elif lov[0].lower() in ["l", "le", "lef", "left"]:
+        elif lov[0].lower() in ['l', 'le', 'lef', 'left']:
             coro = move_left(ptz, moverequest)
-        elif lov[0].lower() in ["r", "ri", "rig", "righ", "right"]:
+        elif lov[0].lower() in ['r', 'ri', 'rig', 'righ', 'right']:
             coro = move_right(ptz, moverequest)
-        elif lov[0].lower() in ["ul"]:
+        elif lov[0].lower() in ['ul']:
             coro = move_upleft(ptz, moverequest)
-        elif lov[0].lower() in ["ur"]:
+        elif lov[0].lower() in ['ur']:
             coro = move_upright(ptz, moverequest)
-        elif lov[0].lower() in ["dl"]:
+        elif lov[0].lower() in ['dl']:
             coro = move_downleft(ptz, moverequest)
-        elif lov[0].lower() in ["dr"]:
+        elif lov[0].lower() in ['dr']:
             coro = move_downright(ptz, moverequest)
-        elif lov[0].lower() in ["s", "st", "sto", "stop"]:
+        elif lov[0].lower() in ['s', 'st', 'sto', 'stop']:
             coro = ptz.Stop({'ProfileToken': moverequest.ProfileToken})
         else:
             print(
                 "What are you asking?\tI only know, 'up','down','left','right', "
                 "'ul' (up left), \n\t\t\t'ur' (up right), 'dl' (down left), "
-                "'dr' (down right) and 'stop'"
+                "'dr' (down right) and 'stop'",
             )
 
     if coro:
         loop.call_soon(coro)
-    print("")
-    print("Your command: ", end='', flush=True)
+    print('')
+    print('Your command: ', end='', flush=True)
 
 
 if __name__ == '__main__':
@@ -165,8 +166,8 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     try:
         loop.add_reader(sys.stdin, readin)
-        print("Use Ctrl-C to quit")
-        print("Your command: ", end='', flush=True)
+        print('Use Ctrl-C to quit')
+        print('Your command: ', end='', flush=True)
         loop.run_forever()
     except Exception:
         pass

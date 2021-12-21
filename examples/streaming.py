@@ -4,12 +4,12 @@ from onvif import ONVIFCamera
 
 
 async def media_profile_configuration():
-    '''
+    """
     A media profile consists of configuration entities such as video/audio
     source configuration, video/audio encoder configuration,
     or PTZ configuration. This use case describes how to change one
     configuration entity which has been already added to the media profile.
-    '''
+    """
 
     # Create the media service
     mycam = ONVIFCamera('192.168.0.112', 80, 'admin', '12345')
