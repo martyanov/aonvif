@@ -2,12 +2,10 @@ import datetime
 import logging
 import os.path
 
-import aiohttp
-import zeep.asyncio
-import zeep.cache
 import zeep.client
 import zeep.exceptions
 import zeep.helpers
+import zeep.proxy
 import zeep.wsse.username
 
 from . import exceptions
@@ -105,48 +103,44 @@ class ONVIFService:
         user,
         passwd,
         url,
+        binding_name,
         encrypt=True,
-        zeep_client=None,
-        no_cache=False,
         dt_diff=None,
-        binding_name='',
-        transport=None,
     ):
         if not os.path.isfile(url):
             raise exceptions.ONVIFError(f"{url!r} doesn't exist!")
 
         self.url = url
         self.xaddr = xaddr
-        self.transport = transport
+
+        # Create security token
         wsse = UsernameDigestTokenDtDiff(
             user, passwd, dt_diff=dt_diff, use_digest=encrypt,
         )
-        # Create soap client
-        if not zeep_client:
-            if not self.transport:
-                session = aiohttp.ClientSession()
-                self.transport = (
-                    zeep.asyncio.AsyncTransport(None, session=session)
-                    if no_cache
-                    else zeep.asyncio.AsyncTransport(
-                        None,
-                        session=session,
-                        cache=zeep.cache.SqliteCache(),
-                    )
-                )
-            client_type = zeep.client.Client if no_cache else zeep.client.CachingClient
-            settings = zeep.client.Settings()
-            settings.strict = False
-            settings.xml_huge_tree = True
-            self.zeep_client = client_type(
-                wsdl=url,
-                wsse=wsse,
-                transport=self.transport,
-                settings=settings,
-            )
-        else:
-            self.zeep_client = zeep_client
-        self.ws_client = self.zeep_client.create_service(binding_name, self.xaddr)
+
+        # Client settings
+        settings = zeep.client.Settings()
+        settings.strict = False
+        settings.xml_huge_tree = True
+
+        # Create client
+        self._client = zeep.client.AsyncClient(
+            wsdl=url,
+            wsse=wsse,
+            settings=settings,
+        )
+
+        # Create service proxy, it's a workaround as zeep still
+        # doesn't support AsyncServiceProxy for AsyncClient
+        binding = self._client.wsdl.bindings.get(binding_name)
+        if binding is None:
+            raise exceptions.ONVIFError(f'Binding was not found: {binding_name!r}')
+
+        self._service_proxy = zeep.proxy.AsyncServiceProxy(
+            self._client,
+            binding,
+            address=self.xaddr,
+        )
 
         # Set soap header for authentication
         self.user = user
@@ -156,16 +150,17 @@ class ONVIFService:
         self.dt_diff = dt_diff
 
         namespace = binding_name[binding_name.find('{') + 1: binding_name.find('}')]
-        available_ns = self.zeep_client.namespaces
+        available_ns = self._client.namespaces
         active_ns = (
             list(available_ns.keys())[list(available_ns.values()).index(namespace)]
             or 'ns0'
         )
-        self.create_type = lambda x: self.zeep_client.get_element(active_ns + ':' + x)()
+        self.create_type = lambda x: self._client.get_element(active_ns + ':' + x)()
 
     async def close(self):
         """Close the transport session."""
-        await self.transport.session.close()
+        if self._client:
+            await self._client.transport.aclose()
 
     @staticmethod
     @safe_func
@@ -174,7 +169,7 @@ class ONVIFService:
         return {} if zeepobject is None else zeep.helpers.serialize_object(zeepobject)
 
     def __getattr__(self, name):
-        """Call the real onvif Service operations.
+        """Call the real ONVIF Service operations.
 
         See the official wsdl definition for the
         APIs detail(API name, request parameters,
@@ -204,7 +199,8 @@ class ONVIFService:
         builtin = name.startswith('__') and name.endswith('__')
         if builtin:
             return self.__dict__[name]
-        return service_wrapper(getattr(self.ws_client, name))
+
+        return service_wrapper(getattr(self._service_proxy, name))
 
 
 class ONVIFCamera:
@@ -236,9 +232,7 @@ class ONVIFCamera:
         passwd,
         wsdl_dir=None,
         encrypt=True,
-        no_cache=False,
         adjust_time=False,
-        transport=None,
     ):
         # TODO: Handle case-sensivity
         os.environ.pop('http_proxy', None)
@@ -249,9 +243,7 @@ class ONVIFCamera:
         self.passwd = passwd
         self.wsdl_dir = wsdl_dir
         self.encrypt = encrypt
-        self.no_cache = no_cache
         self.adjust_time = adjust_time
-        self.transport = transport
         self.dt_diff = None
         self.xaddrs = {}
 
@@ -261,8 +253,8 @@ class ONVIFCamera:
         self.to_dict = ONVIFService.to_dict
 
         # TODO: Better to handle with pathlib
-        if wsdl_dir is None:
-            wsdl_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'wsdl')
+        if self.wsdl_dir is None:
+            self.wsdl_dir = os.path.join(os.path.dirname(__file__), 'wsdl')
 
     async def update_xaddrs(self):
         """Update xaddrs for services."""
@@ -367,11 +359,9 @@ class ONVIFCamera:
             self.user,
             self.passwd,
             wsdl_file,
-            self.encrypt,
-            no_cache=self.no_cache,
+            binding_name,
+            encrypt=self.encrypt,
             dt_diff=self.dt_diff,
-            binding_name=binding_name,
-            transport=self.transport,
         )
 
         self.services[binding_name] = service

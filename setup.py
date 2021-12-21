@@ -55,8 +55,7 @@ setuptools.setup(
         'setuptools_scm==6.3.2',
     ],
     install_requires=[
-        'aiohttp>=3,<4',
-        'zeep[async]>=3,<4',
+        'zeep[async]>=4,<5',
     ],
     extras_require={
         'dev': [
