@@ -51,7 +51,7 @@ class ONVIFCLI(cmd.Cmd):
             args.user,
             args.password,
             args.wsdl,
-            encrypt=args.encrypt,
+            use_token_digest=args.encrypt,
         )
 
         # Create cmd argument parser

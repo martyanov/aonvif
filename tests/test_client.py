@@ -4,8 +4,8 @@ import onvif
 import onvif.client
 
 
-def test_safe_func():
-    @onvif.client.safe_func
+def test_client_handle_errors():
+    @onvif.client.handle_errors
     def maybe_raise(r=False):
         if r:
             raise Exception('oops')
