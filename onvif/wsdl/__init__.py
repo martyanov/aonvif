@@ -1,3 +1,7 @@
+import pathlib
+
+
+WSDL_DIR = pathlib.Path(__file__).parent
 SERVICES = {
     'devicemgmt': {
         'ns': 'http://www.onvif.org/ver10/device/wsdl',

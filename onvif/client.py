@@ -1,6 +1,6 @@
 import datetime
 import logging
-import os.path
+import os
 import typing
 
 import zeep.client
@@ -103,9 +103,6 @@ class ONVIFService:
         use_token_digest: bool = True,
         device_time_drift: typing.Optional[datetime.timedelta] = None,
     ):
-        if not os.path.isfile(url):
-            raise exceptions.ONVIFError(f"{url!r} doesn't exist!")
-
         self.url = url
         self.xaddr = xaddr
 
@@ -204,7 +201,6 @@ class ONVIFCamera:
     :param port: Camera port.
     :param username: Camera username.
     :param password: Camera user password.
-    :param wsdl_dir: Directory with WSDL definitions, use the bundled one by default.
     :param use_token_digest: Use password digest for WSSE authentication.
     :param adjust_time: Allows authentication on cameras without being time synchronized.
                         NOTE: Please note that using NTP on both end is the recommended
@@ -218,7 +214,6 @@ class ONVIFCamera:
         port: int,
         username: str,
         password: str,
-        wsdl_dir: typing.Optional[str] = None,
         use_token_digest: bool = True,
         adjust_time: bool = False,
     ):
@@ -230,7 +225,6 @@ class ONVIFCamera:
         self._port = port
         self._username = username
         self._password = password
-        self._wsdl_dir = wsdl_dir
         self._use_token_digest = use_token_digest
         self._adjust_time = adjust_time
 
@@ -244,10 +238,6 @@ class ONVIFCamera:
         self._services = {}
 
         self.to_dict = ONVIFService.to_dict
-
-        # TODO: Better to handle with pathlib
-        if self._wsdl_dir is None:
-            self._wsdl_dir = os.path.join(os.path.dirname(__file__), 'wsdl')
 
     async def update_xaddrs(self):
         """Update xaddrs for services."""
@@ -306,9 +296,7 @@ class ONVIFCamera:
             namespace += '/' + port_type
 
         # TODO: Cache or load asynchronously
-        wsdlpath = os.path.join(self._wsdl_dir, wsdl_file)
-        if not os.path.isfile(wsdlpath):
-            raise exceptions.ONVIFError(f'No such file: {wsdlpath!r}')
+        wsdl_path = str(wsdl.WSDL_DIR / wsdl_file)
 
         # XAddr for devicemgmt is fixed
         if name == 'devicemgmt':
@@ -318,14 +306,14 @@ class ONVIFCamera:
                 host = f'http://{self._host}'
 
             xaddr = f'{host}:{self._port}/onvif/device_service'
-            return xaddr, wsdlpath, binding_name
+            return xaddr, wsdl_path, binding_name
 
         # Get XAddr
         xaddr = self._xaddrs.get(namespace)
         if not xaddr:
             raise exceptions.ONVIFError(f"Device doesn't support service: {name!r}")
 
-        return xaddr, wsdlpath, binding_name
+        return xaddr, wsdl_path, binding_name
 
     def create_onvif_service(
         self,

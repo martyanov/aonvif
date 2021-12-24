@@ -3,7 +3,6 @@
 import argparse
 import ast
 import cmd
-import os.path
 import re
 
 import zeep.exceptions
@@ -50,7 +49,6 @@ class ONVIFCLI(cmd.Cmd):
             args.port,
             args.user,
             args.password,
-            args.wsdl,
             use_token_digest=args.encrypt,
         )
 
@@ -180,12 +178,6 @@ def create_parser():
         '--password',
         required=True,
         help='Password for authentication',
-    )
-    parser.add_argument(
-        '-w',
-        '--wsdl',
-        default=os.path.join(os.path.dirname(os.path.dirname(__file__)), 'wsdl'),
-        help='directory to store ONVIF WSDL documents',
     )
     parser.add_argument(
         '-e',
