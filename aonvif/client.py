@@ -3,10 +3,12 @@ import logging
 import os
 import typing
 
+import zeep.cache
 import zeep.client
 import zeep.exceptions
 import zeep.helpers
 import zeep.proxy
+import zeep.transports
 import zeep.wsse.username
 
 from . import exceptions
@@ -61,6 +63,41 @@ class UsernameToken(zeep.wsse.username.UsernameToken):
         self.created = old_created
 
         return result
+
+
+class MemoryCache(zeep.cache.Base):
+    """Simple in-memory caching using dict lookup.
+
+    We can store entries indefinitely, as we know that WSDL files
+    can not change.
+
+    We use `url` as stated by `zeep.cache.Base` interface to overcome
+    possible issues if keyword arguments are used, but actually it is
+    always a file path.
+    """
+
+    # Dictionary for storing cache entries
+    _cache: typing.Dict[str, bytes] = {}
+
+    def add(self, url: str, content: bytes) -> None:
+        logger.debug(f'Caching contents of {url!r}')
+
+        if not isinstance(content, (str, bytes)):
+            raise TypeError(
+                f'a bytes-like object is required, not {type(content).__name__!r}',
+            )
+
+        self._cache[url] = content
+
+    def get(self, url: str) -> typing.Optional[bytes]:
+        content = self._cache.get(url)
+        if content is not None:
+            logger.debug(f'Cache HIT for {url!r}')
+            return content
+
+        logger.debug(f'Cache MISS for {url!r}')
+
+        return None
 
 
 class ONVIFService:
@@ -124,6 +161,7 @@ class ONVIFService:
             wsdl=url,
             wsse=wsse,
             settings=settings,
+            transport=zeep.transports.AsyncTransport(cache=MemoryCache()),
         )
 
         # Create service proxy, it's a workaround as zeep still
