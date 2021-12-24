@@ -1,7 +1,7 @@
 import asyncio
 import sys
 
-import onvif
+import aonvif
 
 
 IP = '192.168.0.100'  # Camera IP address
@@ -84,7 +84,7 @@ async def move_downright(ptz, request):
 
 
 async def setup_move():
-    mycam = onvif.ONVIFCamera(IP, PORT, USER, PASS)
+    mycam = aonvif.ONVIFCamera(IP, PORT, USER, PASS)
     await mycam.update_xaddrs()
     # Create media service object
     media = mycam.create_media_service()

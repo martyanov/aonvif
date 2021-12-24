@@ -28,8 +28,8 @@ setuptools.setup(
     ],
     zip_safe=False,
     project_urls={
-        'Bug Reports': 'https://github.com/martyanov/onvif/issues',
-        'Repository': 'https://github.com/martyanov/onvif',
+        'Bug Reports': 'https://github.com/martyanov/aonvif/issues',
+        'Repository': 'https://github.com/martyanov/aonvif',
     },
     packages=setuptools.find_packages(
         exclude=[
@@ -41,7 +41,7 @@ setuptools.setup(
         '': [
             '*.rst',
         ],
-        'onvif.wsdl': [
+        'aonvif.wsdl': [
             '*.wsdl',
             '*.xsd',
             '*xml*',
@@ -77,7 +77,7 @@ setuptools.setup(
     },
     entry_points={
         'console_scripts': [
-            'onvif-cli=onvif.cli:main',
+            'aonvif-cli=aonvif.cli:main',
         ],
     },
 )

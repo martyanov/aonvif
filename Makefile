@@ -28,7 +28,7 @@ build: bootstrap
 	$(PYTHON) setup.py sdist bdist_wheel
 
 lint: bootstrap
-	$(PYTHON) -m flake8 examples onvif tests
+	$(PYTHON) -m flake8 aonvif examples tests
 
 outdated: bootstrap
 	$(PYTHON) -m pip list --outdated --format=columns

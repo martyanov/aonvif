@@ -13,7 +13,7 @@ from . import exceptions
 from . import wsdl
 
 
-logger = logging.getLogger('onvif')
+logger = logging.getLogger('aonvif')
 logging.basicConfig(level=logging.INFO)
 logging.getLogger('zeep.client').setLevel(logging.CRITICAL)
 

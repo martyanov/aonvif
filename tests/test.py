@@ -2,7 +2,7 @@
 
 import unittest
 
-import onvif
+import aonvif
 
 
 CAM_HOST = '172.20.9.84'
@@ -21,7 +21,7 @@ def log(ret):
 class TestDevice(unittest.TestCase):
 
     # Class level cam. Run this test more efficiently..
-    cam = onvif.ONVIFCamera(CAM_HOST, CAM_PORT, CAM_USER, CAM_PASS)
+    cam = aonvif.ONVIFCamera(CAM_HOST, CAM_PORT, CAM_USER, CAM_PASS)
 
     # ***************** Test Capabilities ***************************
     def test_wsd_url(self):
@@ -51,7 +51,7 @@ class TestDevice(unittest.TestCase):
         for category in categorys:
             self.cam.devicemgmt.GetCapabilities({'Category': category})
 
-        with self.assertRaises(onvif.ONVIFError):
+        with self.assertRaises(aonvif.ONVIFError):
             self.cam.devicemgmt.GetCapabilities({'Category': 'unknown'})
 
     def test_get_hostname(self):

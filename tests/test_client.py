@@ -1,11 +1,11 @@
 import pytest
 
-import onvif
-import onvif.client
+import aonvif
+import aonvif.client
 
 
 def test_client_handle_errors():
-    @onvif.client.handle_errors
+    @aonvif.client.handle_errors
     def maybe_raise(r=False):
         if r:
             raise Exception('oops')
@@ -15,7 +15,7 @@ def test_client_handle_errors():
     assert maybe_raise() == 'ok'
 
     with pytest.raises(
-        onvif.ONVIFError,
+        aonvif.ONVIFError,
         match='oops',
     ):
         maybe_raise(True)

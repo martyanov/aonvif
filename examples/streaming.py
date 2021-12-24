@@ -1,6 +1,6 @@
 import asyncio
 
-from onvif import ONVIFCamera
+import aonvif
 
 
 async def media_profile_configuration():
@@ -12,7 +12,7 @@ async def media_profile_configuration():
     """
 
     # Create the media service
-    mycam = ONVIFCamera('192.168.0.112', 80, 'admin', '12345')
+    mycam = aonvif.ONVIFCamera('192.168.0.112', 80, 'admin', '12345')
     await mycam.update_xaddrs()
     media_service = mycam.create_media_service()
 

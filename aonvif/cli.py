@@ -194,8 +194,8 @@ def create_parser():
     parser.add_argument(
         '--cache-location',
         dest='cache_location',
-        default='/tmp/onvif/',
-        help='location to cache suds objects, default to /tmp/onvif/',
+        default='/tmp/aonvif/',
+        help='location to cache suds objects, default to /tmp/aonvif/',
     )
     parser.add_argument(
         '--cache-duration',

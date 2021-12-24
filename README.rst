@@ -40,17 +40,13 @@ Initialize an ONVIFCamera instance
 
 ::
 
-    from onvif import ONVIFCamera
-    mycam = ONVIFCamera('192.168.0.2', 80, 'user', 'passwd', '/etc/onvif/wsdl/')
+    from aonvif import ONVIFCamera
+    mycam = ONVIFCamera('192.168.0.2', 80, 'user', 'passwd')
     await mycam.update_xaddrs()
 
 Now, an ONVIFCamera instance is available. By default, a devicemgmt service is also available if everything is OK.
 
-So, all operations defined in the WSDL document::
-
-/etc/onvif/wsdl/devicemgmt.wsdl
-
-are available.
+So, all operations defined in the WSDL document `devicemgmt.wsdl` are available.
 
 Get information from your camera
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -124,15 +120,15 @@ Or create an unofficial service::
 
 ONVIF CLI
 ---------
-python-onvif also provides a command line interactive interface: onvif-cli.
-onvif-cli is installed automatically.
+
+aonvif also provides a command line interactive interface: aonvif-cli, aonvif-cli is installed automatically.
 
 Single command example
 ~~~~~~~~~~~~~~~~~~~~~~
 
 ::
 
-    $ onvif-cli devicemgmt GetHostname --user 'admin' --password '12345' --host '192.168.0.112' --port 80
+    $ aonvif-cli devicemgmt GetHostname --user 'admin' --password '12345' --host '192.168.0.112' --port 80
     True: {'FromDHCP': True, 'Name': hision}
     $ onvif-cli devicemgmt SetHostname "{'Name': 'NewerHostname'}" --user 'admin' --password '12345' --host '192.168.0.112' --port 80
     True: {}
@@ -142,7 +138,7 @@ Interactive mode
 
 ::
 
-    $ onvif-cli -u 'admin' -a '12345' --host '192.168.0.112' --port 80 --wsdl /etc/onvif/wsdl/
+    $ aonvif-cli -u 'admin' -a '12345' --host '192.168.0.112' --port 80
     ONVIF >>> cmd
     analytics   devicemgmt  events      imaging     media       ptz
     ONVIF >>> cmd devicemgmt GetWsdlUrl
@@ -165,7 +161,7 @@ Batch mode
     cmd devicemgmt GetWsdlUrl
     cmd devicemgmt SetHostname {'Name': 'NewHostname', 'FromDHCP': True}
     cmd devicemgmt GetHostname
-    $ onvif-cli --host 192.168.0.112 -u admin -a 12345 -w /etc/onvif/wsdl/ < batchcmds
+    $ aonvif-cli --host 192.168.0.112 -u admin -a 12345 < batchcmds
     ONVIF >>> True: http://www.onvif.org/
     ONVIF >>> True: {}
     ONVIF >>> True: {'FromDHCP': False, 'Name': NewHostname}

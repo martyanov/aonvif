@@ -4,19 +4,18 @@ import logging
 
 import pytz
 
-import onvif
+import aonvif
 
 
 logging.getLogger('zeep').setLevel(logging.DEBUG)
 
 
 async def run():
-    mycam = onvif.ONVIFCamera(
+    mycam = aonvif.ONVIFCamera(
         '192.168.3.10',
         80,
         'hass',
         'peek4boo',
-        wsdl_dir='/home/jane/onvif/wsdl',
     )
     await mycam.update_xaddrs()
 
