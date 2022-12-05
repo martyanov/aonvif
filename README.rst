@@ -7,10 +7,6 @@ aonvif
    :alt: Build Status
    :target: https://github.com/martyanov/aonvif/actions?query=event%3Apush+branch%3Amaster+workflow%3ACI
 
-.. image:: https://codecov.io/gh/martyanov/aonvif/coverage.svg?branch=master
-   :alt: Coverage report
-   :target: https://codecov.io/gh/martyanov/aonvif/branch/master
-
 .. image:: https://img.shields.io/pypi/v/aonvif.svg
    :alt: PyPI Version
    :target: https://pypi.python.org/pypi/aonvif
