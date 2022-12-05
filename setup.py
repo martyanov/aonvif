@@ -65,7 +65,7 @@ setuptools.setup(
             'flake8-isort==5.0.3',
             'flake8==6.0.0',
             'pep8-naming==0.13.2',
-            'twine==3.7.1',
+            'twine==4.0.2',
         ],
         'test': [
             'pytest-asyncio==0.16.0',
