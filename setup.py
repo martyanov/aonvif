@@ -68,9 +68,9 @@ setuptools.setup(
             'twine==4.0.2',
         ],
         'test': [
-            'pytest-asyncio==0.16.0',
-            'pytest-cov==3.0.0',
-            'pytest==6.2.5',
+            'pytest-asyncio==0.20.2',
+            'pytest-cov==4.0.0',
+            'pytest==7.2.0',
         ],
     },
     entry_points={
