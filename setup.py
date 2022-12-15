@@ -42,12 +42,7 @@ setuptools.setup(
             '*.rst',
         ],
         'aonvif.wsdl': [
-            '*.wsdl',
-            '*.xsd',
-            '*xml*',
-            'envelope',
-            'include',
-            'addressing',
+            '**/*',
         ],
     },
     python_requires='>=3.8.1,<4',
