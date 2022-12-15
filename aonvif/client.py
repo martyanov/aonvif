@@ -314,10 +314,27 @@ class ONVIFCamera:
         for service in self._services.values():
             await service.close()
 
-    def get_definition(self, name, port_type=None):
+    def _build_xaddr(self, service_name: str) -> str:
+        host = self._host
+
+        # If scheme is missing, then treat the scheme as http://
+        if not self._host.startswith('http://') or not self._host.startswith('https://'):
+            host = f'http://{self._host}'
+
+        return f'{host}:{self._port}/onvif/{service_name}_service'
+
+    def get_definition(
+        self,
+        name: str,
+        port_type: typing.Optional[str] = None,
+        require_capability: typing.Optional[bool] = True,
+    ):
         """Return xaddr and wsdl of specified service.
 
         :param name: Service name for which the definition requested.
+        :param port_type: Service port type (optional).
+        :param require_capability: Require the service to be actually
+                                   supported by device, `True` by default.
         """
 
         # Check if the service is supported
@@ -338,18 +355,20 @@ class ONVIFCamera:
 
         # XAddr for devicemgmt is fixed
         if name == 'devicemgmt':
-            host = self._host
-            # If scheme is missing, then treat the scheme as http://
-            if not self._host.startswith('http://') or not self._host.startswith('https://'):
-                host = f'http://{self._host}'
-
-            xaddr = f'{host}:{self._port}/onvif/device_service'
+            xaddr = self._build_xaddr('device')
             return xaddr, wsdl_path, binding_name
 
         # Get XAddr
         xaddr = self._xaddrs.get(namespace)
-        if not xaddr:
+
+        # If XAddr was not found and provided capability is required
+        if not xaddr and require_capability:
             raise exceptions.ONVIFError(f"Device doesn't support service: {name!r}")
+
+        # If XAddr was not found, but provided capability is not required,
+        # we try to infer the address
+        if not xaddr and not require_capability:
+            xaddr = self._build_xaddr(name)
 
         return xaddr, wsdl_path, binding_name
 
@@ -357,17 +376,22 @@ class ONVIFCamera:
         self,
         name: str,
         port_type: typing.Optional[str] = None,
+        require_capability: typing.Optional[bool] = True,
     ) -> ONVIFService:
         """Create ONVIF service and update service registry.
 
         :param name: Service name that should be initialized.
+        :param port_type: Service port type (optional).
+        :param require_capability: Require the service to be actually
+                                   supported by device, `True` by default.
         """
 
         # Normalize provided service name
         name = name.lower()
 
         # Get the service definition
-        xaddr, wsdl_file, binding_name = self.get_definition(name, port_type)
+        xaddr, wsdl_file, binding_name = self.get_definition(
+            name, port_type, require_capability)
 
         # Try to get the requested service from registry,
         # don't recreate a service if the XAddr remains the same,
