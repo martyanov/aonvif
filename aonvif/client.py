@@ -149,6 +149,7 @@ class ONVIFService:
             password,
             device_time_drift=device_time_drift,
             use_digest=use_token_digest,
+            zulu_timestamp=True,
         )
 
         # Client settings
@@ -229,6 +230,21 @@ class ONVIFService:
 
         return service_wrapper(getattr(self._service_proxy, name))
 
+    def set_wsse(
+        self,
+        username: str,
+        password: str,
+        use_token_digest: bool = True,
+        device_time_drift: typing.Optional[datetime.timedelta] = None,
+    ):
+        self._client.wsse = UsernameToken(
+            username,
+            password,
+            device_time_drift=device_time_drift,
+            use_digest=use_token_digest,
+            zulu_timestamp=True,
+        )
+
 
 class ONVIFCamera:
     """Implemention ONVIF compliant device.
@@ -295,6 +311,13 @@ class ONVIFCamera:
                 device_time.Time.Second,
             )
             self._device_time_drift = device_dt - datetime.datetime.utcnow()
+
+            devicemgmt.set_wsse(
+                self._username,
+                self._password,
+                self._use_token_digest,
+                self._device_time_drift,
+            )
 
         # Get XAddr of services on the device
         self._xaddrs = {}
