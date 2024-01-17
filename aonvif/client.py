@@ -296,6 +296,13 @@ class ONVIFCamera:
             )
             self._device_time_drift = device_dt - datetime.datetime.utcnow()
 
+            devicemgmt._client.wsse = UsernameToken(
+                self._username,
+                self._password,
+                self._device_time_drift,
+                use_digest=self._use_token_digest,
+            )
+
         # Get XAddr of services on the device
         self._xaddrs = {}
         capabilities = await devicemgmt.GetCapabilities({'Category': 'All'})

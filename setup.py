@@ -65,6 +65,7 @@ setuptools.setup(
         'test': [
             'pytest-asyncio==0.20.2',
             'pytest-cov==4.0.0',
+            'pytest-mock==3.12.0',
             'pytest==7.2.0',
         ],
     },
