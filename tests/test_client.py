@@ -23,40 +23,6 @@ def test_client_handle_errors():
         maybe_raise(True)
 
 
-def test_onvif_service_set_wsse(mocker):
-    mocked_client = mocker.Mock(
-        namespaces={
-            'xsd': 'http://www.w3.org/2001/XMLSchema',
-            'ns0': 'http://www.onvif.org/ver10/device/wsdl',
-        },
-    )
-    mocker.patch('zeep.client.AsyncClient', return_value=mocked_client)
-    mocker.patch('zeep.proxy.AsyncServiceProxy')
-    onvif_service = aonvif.client.ONVIFService(
-        'http://testhost',
-        'test_username',
-        'test_password',
-        'http://testhost',
-        '{http://www.onvif.org/ver10/device/wsdl}DeviceBinding',
-    )
-
-    onvif_service.set_wsse(
-        'changed_username',
-        'changed_password',
-        use_token_digest=False,
-        device_time_drift=datetime.timedelta(seconds=5),
-    )
-
-    wsse = onvif_service._client.wsse
-
-    assert isinstance(wsse, aonvif.client.UsernameToken)
-    assert wsse.username == 'changed_username'
-    assert wsse.password == 'changed_password'
-    assert wsse.use_digest is False
-    assert wsse._device_time_drift == datetime.timedelta(seconds=5)
-    assert wsse.zulu_timestamp is True
-
-
 @pytest.mark.asyncio
 async def test_onvif_camera_update_xaddrs(mocker):
     onvif_camera = aonvif.client.ONVIFCamera(
@@ -121,12 +87,14 @@ async def test_onvif_camera_update_xaddrs_with_adjust_time(mocker):
     await onvif_camera.update_xaddrs()
 
     devicemgmt.GetSystemDateAndTime.assert_awaited_once_with()
-    devicemgmt.set_wsse.assert_called_once_with(
-        'test_user',
-        'password',
-        True,
-        onvif_camera._device_time_drift,
-    )
+
+    wsse = devicemgmt._client.wsse
+
+    assert isinstance(wsse, aonvif.client.UsernameToken)
+    assert wsse.username == 'test_user'
+    assert wsse.password == 'password'
+    assert wsse._device_time_drift == onvif_camera._device_time_drift
+    assert wsse.use_digest is True
     assert isinstance(onvif_camera._device_time_drift, datetime.timedelta)
     devicemgmt.GetCapabilities.assert_awaited_once_with({'Category': 'All'})
     assert onvif_camera._xaddrs == {}
