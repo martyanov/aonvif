@@ -274,8 +274,46 @@ class ONVIFCamera:
 
         # Currently initialized services
         self._services = {}
+        self._capabilities = None
 
         self.to_dict = ONVIFService.to_dict
+
+    def set_capabilities(self, capabilities: dict):
+        """Set custom capabilities.
+
+        :param capabilities: Dictionary of camera capabilities.
+                             It must have the following format:
+                             {
+                                "Media": {
+                                    "XAddr": "http://{host}/{xaddr_path_1},
+                                },
+                                "PTZ": {
+                                    "XAddr": "http://{host}/{xaddr_path_2},
+                                },
+                             }
+        """
+
+        self._validate_capabilities(capabilities)
+        self._capabilities = capabilities
+
+    def _validate_capabilities(self, capabilities: dict):
+        if not isinstance(capabilities, dict):
+            raise RuntimeError('Capabilities type must be dictionary')
+
+        for key, capability in capabilities.items():
+            if not isinstance(key, str):
+                raise RuntimeError('Capabilities key type must be string')
+
+            if not isinstance(capability, dict):
+                raise RuntimeError('Capability type must be dictionary')
+
+            xaddr = capability.get('XAddr')
+
+            if xaddr is None:
+                raise RuntimeError('Capability XAddr is missing')
+
+            if not isinstance(xaddr, str):
+                raise RuntimeError('Capability XAddr type must be string')
 
     async def update_xaddrs(self):
         """Update xaddrs for services."""
@@ -298,9 +336,12 @@ class ONVIFCamera:
 
         # Get XAddr of services on the device
         self._xaddrs = {}
-        capabilities = await devicemgmt.GetCapabilities({'Category': 'All'})
-        for name in capabilities:
-            capability = capabilities[name]
+
+        if not self._capabilities:
+            self._capabilities = await devicemgmt.GetCapabilities({'Category': 'All'})
+
+        for name in self._capabilities:
+            capability = self._capabilities[name]
             try:
                 if name.lower() in wsdl.SERVICES and capability is not None:
                     namespace = wsdl.SERVICES[name.lower()]['ns']
