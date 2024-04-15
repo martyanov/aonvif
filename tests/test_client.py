@@ -84,7 +84,7 @@ def test_client_set_capabilities_with_invalid_capability_type():
 def test_client_set_capabilities_with_missing_xaddr():
     with pytest.raises(
         RuntimeError,
-        match='Capability XAddr type must be string',
+        match='Capability XAddr is missing',
     ):
         client = aonvif.ONVIFCamera(
             'testhost',

@@ -307,7 +307,12 @@ class ONVIFCamera:
             if not isinstance(capability, dict):
                 raise RuntimeError('Capability type must be dictionary')
 
-            if not isinstance(capability.get('XAddr'), str):
+            xaddr = capability.get('XAddr')
+
+            if xaddr is None:
+                raise RuntimeError('Capability XAddr is missing')
+
+            if not isinstance(xaddr, str):
                 raise RuntimeError('Capability XAddr type must be string')
 
     async def update_xaddrs(self):
