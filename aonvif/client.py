@@ -1,4 +1,5 @@
 import datetime
+import functools
 import logging
 import os
 import typing
@@ -9,6 +10,7 @@ import zeep.exceptions
 import zeep.helpers
 import zeep.proxy
 import zeep.transports
+import zeep.wsdl
 import zeep.wsse.username
 
 from . import exceptions
@@ -30,6 +32,18 @@ def handle_errors(func):
             raise exceptions.ONVIFError(e)
 
     return wrapped
+
+
+@functools.cache
+def _get_wsdl_document(path: str):
+    return zeep.wsdl.Document(
+        location=path,
+        transport=zeep.transports.AsyncTransport(cache=MemoryCache()),
+        settings=zeep.client.Settings(
+            strict=False,
+            xml_huge_tree=True,
+        ),
+    )
 
 
 class UsernameToken(zeep.wsse.username.UsernameToken):
@@ -140,6 +154,9 @@ class ONVIFService:
         use_token_digest: bool = True,
         device_time_drift: typing.Optional[datetime.timedelta] = None,
     ):
+        if not isinstance(url, str) or not os.path.exists(url):
+            raise RuntimeError('ONVIFService url must be valid path')
+
         self.url = url
         self.xaddr = xaddr
 
@@ -156,9 +173,12 @@ class ONVIFService:
         settings.strict = False
         settings.xml_huge_tree = True
 
+        # Parse wsdl document
+        wsdl = _get_wsdl_document(url)
+
         # Create client
         self._client = zeep.client.AsyncClient(
-            wsdl=url,
+            wsdl=wsdl,
             wsse=wsse,
             settings=settings,
             transport=zeep.transports.AsyncTransport(cache=MemoryCache()),

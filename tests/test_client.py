@@ -1,4 +1,6 @@
 import pytest
+import zeep
+import zeep.wsdl
 
 import aonvif
 import aonvif.client
@@ -205,3 +207,42 @@ async def test_client_update_xaddrs_with_custom_capabilities(
         'http://www.onvif.org/ver20/imaging/wsdl': 'http://testhost/onvif/imaging_service',
     }
     mocked_device_mgmt_service.GetCapabilities.assert_not_awaited()
+
+
+def test_onvif_service_with_invalid_url_type():
+    with pytest.raises(
+        aonvif.exceptions.ONVIFError,
+        match='ONVIFService url must be valid path',
+    ):
+        aonvif.client.ONVIFService(
+            xaddr='http://testhost/onvif',
+            username='test',
+            password='password',
+            url=object(),
+            binding_name='ptz',
+        )
+
+
+def test_onvif_service_with_nonexistent_path():
+    with pytest.raises(
+        aonvif.exceptions.ONVIFError,
+        match='ONVIFService url must be valid path',
+    ):
+        aonvif.client.ONVIFService(
+            xaddr='http://testhost/onvif',
+            username='test',
+            password='password',
+            url='/tmp/nonexistent/path',
+            binding_name='ptz',
+        )
+
+
+def test_onvif_service_ensure_wsdl_documents_cached():
+    client1 = aonvif.client.ONVIFCamera('testhost1', 80, 'testuser1', 'password')
+    service1 = client1.create_devicemgmt_service()
+
+    client2 = aonvif.client.ONVIFCamera('testhost2', 80, 'testuser2', 'password')
+    service2 = client2.create_devicemgmt_service()
+
+    assert isinstance(service1._client.wsdl, zeep.wsdl.Document)
+    assert service1._client.wsdl is service2._client.wsdl
