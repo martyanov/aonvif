@@ -21,7 +21,6 @@ setuptools.setup(
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
@@ -45,7 +44,7 @@ setuptools.setup(
             '**/*',
         ],
     },
-    python_requires='>=3.8.1,<4',
+    python_requires='>=3.9.1,<4',
     setup_requires=[
         'setuptools_scm==6.3.2',
     ],
